@@ -1,0 +1,3288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f1ea">
+<title>Weekly Timetable</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --surface: #fffdf9;
+    --surface-2: #f8f5ef;
+    --surface-3: #f1ece2;
+    --ink: #1c2621;
+    --ink-2: #4f5a54;
+    --ink-3: #667069;
+    --line: #e6e0d4;
+    --line-strong: #d3cbbb;
+    --brand: #2e6653;
+    --brand-dark: #245243;
+    --brand-soft: #e8f0eb;
+    --brand-tint: #dce9e2;
+    --ochre: #8d6126;
+    --ochre-light: #c99550;
+    --ochre-soft: #f5ead8;
+    --slate: #4d6b7d;
+    --slate-soft: #e9eef2;
+    --clay: #85543a;
+    --clay-soft: #f2e9e2;
+    --shadow-sm: 0 1px 2px rgba(29, 38, 34, 0.04), 0 3px 10px rgba(29, 38, 34, 0.035);
+    --shadow-md: 0 22px 44px -32px rgba(29, 38, 34, 0.4);
+    --shadow-lg: 0 36px 80px -42px rgba(20, 31, 26, 0.55);
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+      Arial, sans-serif;
+    --font-serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman",
+      serif;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    overflow-x: clip;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    overflow-x: clip;
+    background:
+      radial-gradient(900px 540px at 82% -12%, rgba(46, 102, 83, 0.085), transparent 66%),
+      radial-gradient(760px 520px at 0% 108%, rgba(154, 107, 44, 0.06), transparent 62%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body,
+  button,
+  input {
+    font-family: var(--font-sans);
+  }
+
+  button,
+  input {
+    font-size: inherit;
+    color: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: default;
+  }
+
+  svg {
+    display: block;
+  }
+
+  h1,
+  h2,
+  h3,
+  p {
+    margin-top: 0;
+  }
+
+  ::selection {
+    background: var(--brand-tint);
+    color: var(--ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  .sr-only {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  .ui-icon {
+    flex: 0 0 auto;
+  }
+
+  .shell {
+    width: 100%;
+    max-width: 1360px;
+    margin: 0 auto;
+    padding-right: clamp(18px, 3vw, 42px);
+    padding-left: clamp(18px, 3vw, 42px);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Top bar                                                            */
+  /* ------------------------------------------------------------------ */
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    border-bottom: 1px solid rgba(211, 203, 187, 0.66);
+    background: rgba(255, 253, 249, 0.85);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .topbar.is-scrolled {
+    box-shadow: 0 12px 30px -28px rgba(29, 38, 34, 0.5);
+  }
+
+  .topbar-inner {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    height: 66px;
+  }
+
+  .brand {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .brand-mark {
+    width: 32px;
+    height: 32px;
+    filter: drop-shadow(0 4px 9px rgba(29, 38, 34, 0.13));
+  }
+
+  .brand-mark svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .brand-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .brand-name {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .brand-en {
+    color: var(--ink-3);
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  .section-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .section-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .section-nav a {
+    position: relative;
+    flex: 0 0 auto;
+    padding: 8px 11px;
+    border-radius: 7px;
+    color: var(--ink-3);
+    font-size: 11.5px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+
+  .section-nav a:hover {
+    background: var(--surface-2);
+    color: var(--ink-2);
+  }
+
+  .section-nav a.is-active {
+    color: var(--brand);
+    font-weight: 600;
+  }
+
+  .section-nav a.is-active::after {
+    position: absolute;
+    right: 11px;
+    bottom: 2px;
+    left: 11px;
+    height: 2px;
+    border-radius: 99px;
+    background: var(--brand);
+    content: "";
+  }
+
+  .topbar-note {
+    flex: 0 0 auto;
+    margin-left: auto;
+    padding: 5px 9px;
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    background: var(--surface-2);
+    color: var(--ink-3);
+    font-size: 8.5px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Hero                                                               */
+  /* ------------------------------------------------------------------ */
+
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 350px;
+    align-items: center;
+    gap: 44px;
+    padding-top: clamp(38px, 5vw, 64px);
+    padding-bottom: clamp(28px, 3.6vw, 46px);
+  }
+
+  .hero-copy {
+    min-width: 0;
+  }
+
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: var(--ink-3);
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  .eyebrow-line {
+    display: inline-block;
+    width: 18px;
+    height: 1px;
+    background: var(--ochre-light);
+  }
+
+  .hero h1 {
+    margin: 0 0 13px;
+    font-family: var(--font-serif);
+    font-size: clamp(44px, 5.8vw, 66px);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+
+  .hero-lead {
+    max-width: 560px;
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    line-height: 1.75;
+    text-wrap: pretty;
+  }
+
+  .hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 22px;
+    color: var(--ink-3);
+    font-size: 10.5px;
+    flex-wrap: wrap;
+  }
+
+  .hero-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .hero-meta-item svg {
+    width: 13px;
+    height: 13px;
+    opacity: 0.7;
+  }
+
+  .hero-meta-sep {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--line-strong);
+  }
+
+  .hero-art {
+    position: relative;
+    width: 100%;
+    height: 258px;
+    pointer-events: none;
+  }
+
+  .hero-art-back {
+    position: absolute;
+    top: 26px;
+    right: 16px;
+    width: 290px;
+    height: 205px;
+    border: 1px solid rgba(154, 107, 44, 0.16);
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(245, 234, 216, 0.8), rgba(232, 240, 235, 0.6));
+    transform: rotate(4deg);
+  }
+
+  .hero-board {
+    position: absolute;
+    top: 12px;
+    right: 34px;
+    width: 306px;
+    padding: 12px 12px 10px;
+    border: 1px solid rgba(211, 203, 187, 0.9);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: 0 30px 60px -36px rgba(29, 38, 34, 0.48);
+    transform: rotate(-2.5deg);
+  }
+
+  .board-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 1px 2px 10px;
+  }
+
+  .board-dots {
+    display: flex;
+    gap: 3px;
+  }
+
+  .board-dots i {
+    display: block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--line-strong);
+  }
+
+  .board-dots i:first-child {
+    background: var(--ochre-light);
+  }
+
+  .board-title {
+    color: var(--ink-3);
+    font-size: 6.5px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+  }
+
+  .board-tag {
+    margin-left: auto;
+    color: var(--ink-3);
+    font-size: 6.5px;
+    letter-spacing: 0.08em;
+  }
+
+  .board-canvas {
+    position: relative;
+    height: 182px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fcfaf5;
+  }
+
+  .board-canvas::before {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(29, 38, 34, 0.065) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(29, 38, 34, 0.065) 1px, transparent 1px);
+    background-size: calc(100% / 5) 100%, 100% calc(100% / 7);
+    content: "";
+  }
+
+  .board-chip {
+    position: absolute;
+    top: calc(var(--y) * 14.2857% + 5px);
+    left: calc(var(--x) * 20% + 5px);
+    width: calc(20% - 10px);
+    height: calc(14.2857% - 10px);
+    border-radius: 4px;
+    background: var(--tint);
+    box-shadow: inset 2px 0 0 var(--c);
+  }
+
+  .board-chip.c1 { --c: #2f5ca8; --tint: #e7eef9; --x: 0; --y: 0; }
+  .board-chip.c2 { --c: #8a4a1e; --tint: #f7eddd; --x: 2; --y: 1; }
+  .board-chip.c3 { --c: #326638; --tint: #e7f0e7; --x: 4; --y: 2; }
+  .board-chip.c4 { --c: #a34670; --tint: #f6e7ee; --x: 1; --y: 3; }
+  .board-chip.c5 { --c: #165e68; --tint: #e1f0f1; --x: 3; --y: 4; }
+  .board-chip.c6 { --c: #9e4e10; --tint: #f8ebdc; --x: 0; --y: 5; }
+  .board-chip.c7 { --c: #6a4c9b; --tint: #eee9f6; --x: 2; --y: 6; }
+
+  .board-foot {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 4px 0;
+    color: var(--line-strong);
+    font-size: 6px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+  }
+
+  .hero-float {
+    position: absolute;
+    right: 8px;
+    bottom: 18px;
+    padding: 7px 11px;
+    border: 1px solid rgba(211, 203, 187, 0.9);
+    border-radius: 99px;
+    background: var(--surface);
+    color: var(--ink-3);
+    font-size: 8.5px;
+    letter-spacing: 0.04em;
+    box-shadow: 0 12px 28px -18px rgba(29, 38, 34, 0.5);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Overview strip                                                     */
+  /* ------------------------------------------------------------------ */
+
+  .overview {
+    padding-bottom: 4px;
+  }
+
+  .overview-card {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    min-height: 72px;
+    padding: 13px 22px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: linear-gradient(115deg, var(--surface) 0%, #fbf8f1 100%);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .overview-label {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .overview-label .eyebrow {
+    margin: 0;
+    font-size: 7.5px;
+  }
+
+  .overview-label strong {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .overview-stats {
+    display: flex;
+    align-items: center;
+  }
+
+  .ov-stat {
+    display: flex;
+    min-width: 84px;
+    align-items: baseline;
+    gap: 6px;
+    padding: 0 20px;
+    border-left: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ov-stat strong {
+    color: var(--ink);
+    font-size: 22px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .ov-stat span {
+    color: var(--ink-3);
+    font-size: 9.5px;
+    white-space: nowrap;
+  }
+
+  .overview-note {
+    margin-left: auto;
+    color: var(--ink-3);
+    font-size: 8.5px;
+    white-space: nowrap;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Sections                                                           */
+  /* ------------------------------------------------------------------ */
+
+  .section {
+    padding-top: 24px;
+    margin-top: clamp(30px, 4vw, 48px);
+    border-top: 1px solid var(--line);
+    scroll-margin-top: 86px;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 15px;
+  }
+
+  .section-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    min-width: 0;
+  }
+
+  .section-num {
+    flex: 0 0 30px;
+    padding-top: 3px;
+    color: var(--ochre);
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+  }
+
+  .section-head-copy {
+    min-width: 0;
+  }
+
+  .section-head-copy .eyebrow {
+    margin-bottom: 3px;
+    font-size: 7.5px;
+  }
+
+  .section-head-copy h2 {
+    margin: 0 0 3px;
+    font-family: var(--font-serif);
+    font-size: clamp(22px, 2.2vw, 27px);
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 1.2;
+  }
+
+  .section-head-copy p {
+    margin: 0;
+    color: var(--ink-3);
+    font-size: 10.5px;
+    line-height: 1.55;
+  }
+
+  .section-tools {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .count-chip {
+    display: inline-flex;
+    align-items: center;
+    height: 29px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    background: var(--surface);
+    color: var(--ink-3);
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Picker                                                             */
+  /* ------------------------------------------------------------------ */
+
+  .picker-host {
+    flex: 0 0 auto;
+    width: 246px;
+  }
+
+  .picker {
+    position: relative;
+    width: 100%;
+  }
+
+  .picker-trigger {
+    display: flex;
+    width: 100%;
+    height: 42px;
+    align-items: center;
+    gap: 9px;
+    padding: 5px 9px 5px 7px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--ink);
+    text-align: left;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .picker-trigger:hover:not(:disabled) {
+    border-color: var(--line-strong);
+    box-shadow: 0 6px 16px -12px rgba(29, 38, 34, 0.28);
+  }
+
+  .picker-trigger:disabled {
+    background: var(--surface-2);
+    box-shadow: none;
+    opacity: 0.78;
+  }
+
+  .picker.is-open .picker-trigger {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(46, 102, 83, 0.09);
+  }
+
+  .picker-symbol {
+    display: grid;
+    flex: 0 0 29px;
+    place-items: center;
+    width: 29px;
+    height: 29px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 650;
+    line-height: 1;
+  }
+
+  .picker-symbol.tone-brand,
+  .option-symbol.tone-brand {
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+
+  .picker-symbol.tone-ochre,
+  .option-symbol.tone-ochre {
+    background: var(--ochre-soft);
+    color: var(--ochre);
+  }
+
+  .picker-symbol.tone-slate,
+  .option-symbol.tone-slate {
+    background: var(--slate-soft);
+    color: var(--slate);
+  }
+
+  .picker-symbol.tone-muted,
+  .option-symbol.tone-muted {
+    background: var(--surface-3);
+    color: var(--ink-3);
+  }
+
+  .picker-symbol .ui-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .avatar-initial {
+    font-family: var(--font-serif);
+  }
+
+  .picker-text {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .picker-caption {
+    color: var(--ink-3);
+    font-size: 7.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+  }
+
+  .picker-value {
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .picker-caret {
+    display: grid;
+    flex: 0 0 18px;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    color: var(--ink-3);
+    transition: transform 0.18s ease;
+  }
+
+  .picker.is-open .picker-caret {
+    transform: rotate(180deg);
+  }
+
+  .picker-popover {
+    position: absolute;
+    top: calc(100% + 7px);
+    right: 0;
+    z-index: 70;
+    width: 300px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+    animation: popIn 0.16s ease-out both;
+  }
+
+  @keyframes popIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .picker-search {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-3);
+  }
+
+  .picker-search input {
+    min-width: 0;
+    flex: 1;
+    height: 26px;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--ink);
+    font-size: 10.5px;
+  }
+
+  .picker-search input::placeholder {
+    color: var(--ink-3);
+  }
+
+  .picker-options {
+    max-height: 268px;
+    padding: 5px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .picker-option {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    padding: 7px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    text-align: left;
+    transition: background 0.12s ease;
+  }
+
+  .picker-option:hover,
+  .picker-option.is-active {
+    background: var(--brand-soft);
+  }
+
+  .option-symbol {
+    display: grid;
+    flex: 0 0 27px;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    border-radius: 7px;
+    font-size: 10.5px;
+    font-weight: 650;
+    line-height: 1;
+  }
+
+  .option-symbol .ui-icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  .option-copy {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .option-name {
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 10.5px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .option-meta {
+    overflow: hidden;
+    margin-top: 0;
+    color: var(--ink-3);
+    font-size: 8px;
+    line-height: 1.4;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .option-check {
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+    color: var(--brand);
+    opacity: 0;
+  }
+
+  .picker-option.is-selected .option-check {
+    opacity: 1;
+  }
+
+  .picker-empty {
+    padding: 22px 16px 24px;
+    color: var(--ink-3);
+    font-size: 10px;
+    text-align: center;
+  }
+
+  .picker-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 10px;
+    border-top: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--ink-3);
+    font-size: 8px;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Timetable card                                                     */
+  /* ------------------------------------------------------------------ */
+
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .timetable-card {
+    overflow: hidden;
+  }
+
+  .tt-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .tt-identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .tt-symbol {
+    display: grid;
+    flex: 0 0 38px;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    font-family: var(--font-serif);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .tt-symbol.tone-brand {
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+
+  .tt-symbol.tone-ochre {
+    background: var(--ochre-soft);
+    color: var(--ochre);
+  }
+
+  .tt-symbol.tone-slate {
+    background: var(--slate-soft);
+    color: var(--slate);
+  }
+
+  .tt-symbol .ui-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .tt-kicker {
+    margin-bottom: 1px;
+    color: var(--ink-3);
+    font-size: 7.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    line-height: 1.4;
+  }
+
+  .tt-id-copy h3 {
+    overflow: hidden;
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .tt-metrics {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+  }
+
+  .tt-metric {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 0 14px;
+    border-left: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tt-metric:first-child {
+    border-left: none;
+  }
+
+  .tt-metric strong {
+    color: var(--ink);
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .tt-metric span {
+    color: var(--ink-3);
+    font-size: 8.5px;
+    white-space: nowrap;
+  }
+
+  .tt-note {
+    margin: 12px 18px 0;
+    padding: 8px 11px;
+    border-radius: 7px;
+    background: var(--surface-2);
+    color: var(--ink-3);
+    font-size: 9.5px;
+  }
+
+  .tt-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 6px 14px 13px;
+    outline: none;
+  }
+
+  .tt-scroll:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--brand-tint);
+  }
+
+  .tt {
+    width: 100%;
+    min-width: 780px;
+    border-collapse: separate;
+    border-spacing: 6px;
+    table-layout: fixed;
+  }
+
+  .tt thead th {
+    padding: 0 0 3px 6px;
+    color: var(--ink-3);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-align: left;
+    vertical-align: bottom;
+  }
+
+  .tt thead th.tt-corner {
+    width: 62px;
+    color: var(--ink-3);
+    font-size: 8px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+  }
+
+  .tt tbody th {
+    width: 62px;
+    padding: 9px 4px 0;
+    background: var(--surface);
+    color: var(--ink-3);
+    font-size: 9px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: left;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+
+  .tt-period {
+    display: block;
+    color: var(--ink-2);
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .tt-time {
+    display: block;
+    margin-top: 2px;
+    color: var(--ink-3);
+    font-size: 7.5px;
+    font-weight: 500;
+    line-height: 1.35;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tt tbody td {
+    height: 86px;
+    padding: 0;
+    vertical-align: top;
+  }
+
+  .tt th:first-child,
+  .tt td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--surface);
+  }
+
+  .tt thead th:first-child {
+    z-index: 3;
+  }
+
+  .tt tbody tr > *:first-child {
+    box-shadow: 7px 0 12px -14px rgba(29, 38, 34, 0.4);
+  }
+
+  .lesson-stack {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .lesson {
+    display: flex;
+    min-width: 0;
+    min-height: 82px;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    padding: 7px 9px 6px;
+    overflow: hidden;
+    border-left: 3px solid var(--c);
+    border-radius: 8px;
+    background: var(--tint);
+  }
+
+  .lesson-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .lesson-dot {
+    flex: 0 0 5px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--c);
+  }
+
+  .lesson-name {
+    overflow: hidden;
+    color: var(--c);
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.35;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .lesson-meta {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0;
+    margin-top: auto;
+  }
+
+  .lesson-line {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 4px;
+    color: var(--ink-2);
+    font-size: 8.5px;
+    line-height: 1.5;
+  }
+
+  .lesson-line .ui-icon {
+    color: var(--ink-3);
+    opacity: 0.75;
+  }
+
+  .lesson-line > span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .slot-empty {
+    display: flex;
+    height: 100%;
+    min-height: 86px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(248, 245, 239, 0.58);
+    color: var(--line-strong);
+    font-size: 11px;
+  }
+
+  .slot-empty::before {
+    content: "—";
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Empty card                                                         */
+  /* ------------------------------------------------------------------ */
+
+  .empty-card {
+    position: relative;
+    display: flex;
+    min-height: 176px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 30px 22px;
+    text-align: center;
+  }
+
+  .empty-card::before {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(29, 38, 34, 0.028) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(29, 38, 34, 0.028) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: radial-gradient(circle at center, black, transparent 72%);
+    -webkit-mask-image: radial-gradient(circle at center, black, transparent 72%);
+    content: "";
+    pointer-events: none;
+  }
+
+  .empty-inner {
+    position: relative;
+    display: flex;
+    max-width: 380px;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .empty-graphic {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+  }
+
+  .empty-graphic.tone-brand {
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+
+  .empty-graphic.tone-ochre {
+    background: var(--ochre-soft);
+    color: var(--ochre);
+  }
+
+  .empty-graphic.tone-slate {
+    background: var(--slate-soft);
+    color: var(--slate);
+  }
+
+  .empty-graphic.tone-clay {
+    background: var(--clay-soft);
+    color: var(--clay);
+  }
+
+  .empty-graphic .ui-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .empty-card h3 {
+    margin: 0 0 4px;
+    font-family: var(--font-serif);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    line-height: 1.35;
+  }
+
+  .empty-card p {
+    margin: 0;
+    color: var(--ink-3);
+    font-size: 10px;
+    line-height: 1.65;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Course map                                                         */
+  /* ------------------------------------------------------------------ */
+
+  .course-card {
+    overflow: hidden;
+  }
+
+  .table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .course-table {
+    width: 100%;
+    min-width: 780px;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .course-table th,
+  .course-table td {
+    padding: 13px 17px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .course-table thead th {
+    padding-top: 11px;
+    padding-bottom: 10px;
+    background: var(--surface-2);
+    color: var(--ink-3);
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .course-table thead th:first-child {
+    width: 20%;
+  }
+
+  .course-table thead th:nth-child(2) {
+    width: 23%;
+  }
+
+  .course-table thead th:nth-child(3) {
+    width: 37%;
+  }
+
+  .course-table thead th:nth-child(4),
+  .course-table thead th:nth-child(5) {
+    width: 10%;
+  }
+
+  .course-table tbody tr {
+    transition: background 0.12s ease;
+  }
+
+  .course-table tbody tr:hover {
+    background: rgba(248, 245, 239, 0.62);
+  }
+
+  .course-table tbody tr:last-child th,
+  .course-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .course-table tbody th {
+    font-weight: 500;
+  }
+
+  .course-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  .course-dot {
+    flex: 0 0 7px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c);
+  }
+
+  .course-name-text {
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 11.5px;
+    font-weight: 650;
+    line-height: 1.5;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .tag-wrap {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .person-tag,
+  .room-tag {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-size: 8.5px;
+    line-height: 1.4;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .room-tag {
+    border-color: var(--brand-tint);
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+
+  .room-tag .ui-icon {
+    opacity: 0.7;
+  }
+
+  .dash {
+    color: var(--line-strong);
+    font-size: 10px;
+  }
+
+  .course-table .num {
+    color: var(--ink-2);
+    font-size: 11px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .course-note {
+    margin: 0;
+    padding: 11px 17px 14px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-size: 8.5px;
+    line-height: 1.6;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Footer                                                             */
+  /* ------------------------------------------------------------------ */
+
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-top: clamp(36px, 5vw, 60px);
+    padding-top: 18px;
+    padding-bottom: 34px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-size: 9px;
+    flex-wrap: wrap;
+  }
+
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink-2);
+    font-family: var(--font-serif);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  .footer-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--ochre-light);
+  }
+
+  .footnote {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .noscript {
+    margin: 20px;
+    padding: 12px 14px;
+    border: 1px solid #e5c9c2;
+    border-radius: 9px;
+    background: #f7e6e2;
+    color: #8d3f35;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Responsive                                                         */
+  /* ------------------------------------------------------------------ */
+
+  @media (max-width: 1100px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr) 310px;
+      gap: 24px;
+    }
+
+    .hero-board {
+      right: 8px;
+      width: 288px;
+    }
+
+    .hero-art-back {
+      right: 0;
+      width: 274px;
+    }
+
+    .hero-float {
+      right: 0;
+    }
+
+    .overview-note {
+      display: none;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: 1fr;
+      gap: 0;
+      padding-top: 38px;
+      padding-bottom: 28px;
+    }
+
+    .hero-art {
+      display: none;
+    }
+
+    .hero h1 {
+      font-size: clamp(42px, 10vw, 58px);
+    }
+
+    .overview-card {
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .overview-stats {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ov-stat {
+      min-width: 0;
+      flex: 1;
+      padding: 0 12px;
+    }
+
+    .section-head {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-tools {
+      width: 100%;
+      align-items: center;
+    }
+
+    .picker-host {
+      width: 100%;
+      flex: 1;
+    }
+  }
+
+  @media (max-width: 660px) {
+    .topbar-inner {
+      gap: 10px;
+      height: 60px;
+    }
+
+    .brand-copy {
+      display: none;
+    }
+
+    .brand-mark {
+      width: 30px;
+      height: 30px;
+    }
+
+    .section-nav {
+      gap: 0;
+      flex: 1;
+    }
+
+    .section-nav a {
+      padding: 8px 8px;
+      font-size: 10.5px;
+    }
+
+    .section-nav a.is-active::after {
+      right: 8px;
+      left: 8px;
+    }
+
+    .topbar-note {
+      display: none;
+    }
+
+    .hero {
+      padding-top: 32px;
+      padding-bottom: 24px;
+    }
+
+    .hero-lead {
+      font-size: 12px;
+    }
+
+    .hero-meta {
+      margin-top: 16px;
+      gap: 8px;
+      font-size: 9.5px;
+    }
+
+    .overview {
+      padding-bottom: 0;
+    }
+
+    .overview-card {
+      padding: 12px 14px;
+      gap: 10px;
+    }
+
+    .overview-label {
+      width: 100%;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .overview-label .eyebrow {
+      margin: 0;
+    }
+
+    .overview-label strong {
+      font-size: 12px;
+    }
+
+    .overview-stats {
+      display: grid;
+      width: 100%;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0;
+    }
+
+    .ov-stat {
+      padding: 7px 10px;
+      border-top: 1px solid var(--line);
+      border-left: none;
+    }
+
+    .ov-stat:nth-child(odd) {
+      border-right: 1px solid var(--line);
+      padding-left: 0;
+    }
+
+    .ov-stat strong {
+      font-size: 19px;
+    }
+
+    .section {
+      padding-top: 20px;
+      margin-top: 28px;
+      scroll-margin-top: 74px;
+    }
+
+    .section-heading {
+      gap: 9px;
+    }
+
+    .section-num {
+      flex-basis: 24px;
+      font-size: 13px;
+    }
+
+    .section-head-copy h2 {
+      font-size: 22px;
+    }
+
+    .section-tools {
+      gap: 7px;
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .count-chip {
+      align-self: flex-start;
+      height: 26px;
+      font-size: 8.5px;
+    }
+
+    .picker-host {
+      width: 100%;
+      flex: 0 0 auto;
+    }
+
+    .picker-trigger {
+      height: 40px;
+    }
+
+    .picker-popover {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .tt-card-head {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px 15px 12px;
+    }
+
+    .tt-symbol {
+      flex-basis: 34px;
+      width: 34px;
+      height: 34px;
+      font-size: 15px;
+    }
+
+    .tt-id-copy h3 {
+      font-size: 18px;
+    }
+
+    .tt-metrics {
+      width: 100%;
+      padding-top: 9px;
+      border-top: 1px solid var(--line);
+    }
+
+    .tt-metric {
+      flex: 1;
+      min-width: 0;
+      padding: 0 10px;
+    }
+
+    .tt-metric:first-child {
+      padding-left: 0;
+    }
+
+    .tt-metric strong {
+      font-size: 16px;
+    }
+
+    .tt-metric span {
+      font-size: 8px;
+    }
+
+    .tt-scroll {
+      padding: 4px 8px 10px;
+    }
+
+    .tt {
+      min-width: 720px;
+      border-spacing: 5px;
+    }
+
+    .tt tbody td {
+      height: 78px;
+    }
+
+    .lesson {
+      min-height: 74px;
+      padding: 6px 8px;
+    }
+
+    .slot-empty {
+      min-height: 78px;
+    }
+
+    .empty-card {
+      min-height: 156px;
+      padding: 24px 18px;
+    }
+
+    .course-note {
+      padding-right: 13px;
+      padding-left: 13px;
+    }
+
+    .footer {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 26px;
+    }
+
+    .footnote {
+      gap: 10px;
+    }
+  }
+
+  @media (max-width: 430px) {
+    .section-nav a {
+      padding: 8px 6px;
+      font-size: 10px;
+    }
+
+    .section-nav a.is-active::after {
+      right: 6px;
+      left: 6px;
+    }
+
+    .tt-metric {
+      padding: 0 8px;
+    }
+
+    .tt-metric strong {
+      font-size: 15px;
+    }
+
+    .tt-metric span {
+      font-size: 7.5px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  @media print {
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
+
+    body {
+      background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .topbar,
+    .hero-art,
+    .overview,
+    .section-nav,
+    .picker-host,
+    .count-chip,
+    .footer,
+    .noscript {
+      display: none !important;
+    }
+
+    .shell {
+      max-width: none;
+      padding: 0;
+    }
+
+    .hero {
+      display: block;
+      padding: 0 0 10px;
+    }
+
+    .hero h1 {
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
+
+    .hero-lead,
+    .hero-meta {
+      display: none;
+    }
+
+    .section {
+      margin-top: 16px;
+      padding-top: 12px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .section-head {
+      margin-bottom: 8px;
+    }
+
+    .section-head-copy h2 {
+      font-size: 18px;
+    }
+
+    .card {
+      border-color: #d5d0c7;
+      box-shadow: none;
+    }
+
+    .tt {
+      min-width: 0 !important;
+      border-spacing: 3px;
+    }
+
+    .tt tbody td {
+      height: 54px;
+    }
+
+    .lesson {
+      min-height: 52px;
+      padding: 4px 6px;
+    }
+
+    .slot-empty {
+      min-height: 54px;
+    }
+
+    .course-table {
+      min-width: 0;
+    }
+
+    .empty-card {
+      min-height: 90px;
+      padding: 14px;
+    }
+  }
+</style>
+</head>
+<body>
+  <a class="sr-only" href="#students">Skip to timetable</a>
+
+  <header class="topbar" id="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="#top" aria-label="Weekly Timetable">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="32" height="32" rx="10" fill="#F5F0E4"/>
+            <path d="M10 12.5h16M10 18h16M10 23.5h9" stroke="#2E6653" stroke-width="2.2" stroke-linecap="round"/>
+            <circle cx="25.5" cy="23.5" r="2.6" fill="#B07C3A"/>
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <span class="brand-name">Weekly Timetable</span>
+          <span class="brand-en">SCHEDULE OVERVIEW</span>
+        </span>
+      </a>
+      <nav class="section-nav" aria-label="Timetable sections">
+        <a href="#students">Students</a>
+        <a href="#teachers">Teachers</a>
+        <a href="#rooms">Rooms</a>
+        <a href="#courses">Courses &amp; Rooms</a>
+        <a href="/">Input</a>
+      </nav>
+      <span class="topbar-note">Fixed weekly · 5 days × 7 periods</span>
+    </div>
+  </header>
+
+  <div id="top"></div>
+
+  <main>
+    <section class="hero shell" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-line"></span>WEEKLY TIMETABLE</div>
+        <h1 id="page-title">Weekly Timetable</h1>
+        <p class="hero-lead">View student, teacher, and room schedules for the week on a single page, and check which room every course uses.</p>
+        <div class="hero-meta">
+          <span class="hero-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+            Monday – Friday
+          </span>
+          <span class="hero-meta-sep" aria-hidden="true"></span>
+          <span class="hero-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            7 periods a day
+          </span>
+          <span class="hero-meta-sep" aria-hidden="true"></span>
+          <span class="hero-meta-item">Fixed weekly schedule</span>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="hero-art-back"></div>
+        <div class="hero-board">
+          <div class="board-head">
+            <span class="board-dots"><i></i><i></i><i></i></span>
+            <span class="board-title">WEEKLY GRID</span>
+            <span class="board-tag">5 × 7</span>
+          </div>
+          <div class="board-canvas">
+            <span class="board-chip c1"></span>
+            <span class="board-chip c2"></span>
+            <span class="board-chip c3"></span>
+            <span class="board-chip c4"></span>
+            <span class="board-chip c5"></span>
+            <span class="board-chip c6"></span>
+            <span class="board-chip c7"></span>
+          </div>
+          <div class="board-foot"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span></div>
+        </div>
+        <span class="hero-float">Every week</span>
+      </div>
+    </section>
+
+    <section class="overview shell" aria-label="This week at a glance">
+      <div class="overview-card">
+        <div class="overview-label">
+          <span class="eyebrow">AT A GLANCE</span>
+          <strong>This Week</strong>
+        </div>
+        <div class="overview-stats">
+          <div class="ov-stat"><strong data-stat="students">—</strong><span>Students</span></div>
+          <div class="ov-stat"><strong data-stat="teachers">—</strong><span>Teachers</span></div>
+          <div class="ov-stat"><strong data-stat="rooms">—</strong><span>Rooms</span></div>
+          <div class="ov-stat"><strong data-stat="courses">—</strong><span>Courses</span></div>
+        </div>
+        <div class="overview-note">Automatically summarized from the same schedule records</div>
+      </div>
+    </section>
+
+    <section class="section shell" id="students" aria-labelledby="students-title">
+      <div class="section-head">
+        <div class="section-heading">
+          <span class="section-num">01</span>
+          <div class="section-head-copy">
+            <div class="eyebrow">STUDENT SCHEDULE</div>
+            <h2 id="students-title">Student Schedule</h2>
+            <p>Search by name to view each student's weekly timetable.</p>
+          </div>
+        </div>
+        <div class="section-tools">
+          <span class="count-chip" id="student-count">No students yet</span>
+          <div class="picker-host" id="student-picker"></div>
+        </div>
+      </div>
+      <div id="student-view"></div>
+    </section>
+
+    <section class="section shell" id="teachers" aria-labelledby="teachers-title">
+      <div class="section-head">
+        <div class="section-heading">
+          <span class="section-num">02</span>
+          <div class="section-head-copy">
+            <div class="eyebrow">TEACHER SCHEDULE</div>
+            <h2 id="teachers-title">Teacher Schedule</h2>
+            <p>Search by name to view each teacher's weekly lessons and rooms.</p>
+          </div>
+        </div>
+        <div class="section-tools">
+          <span class="count-chip" id="teacher-count">No teachers yet</span>
+          <div class="picker-host" id="teacher-picker"></div>
+        </div>
+      </div>
+      <div id="teacher-view"></div>
+    </section>
+
+    <section class="section shell" id="rooms" aria-labelledby="rooms-title">
+      <div class="section-head">
+        <div class="section-heading">
+          <span class="section-num">03</span>
+          <div class="section-head-copy">
+            <div class="eyebrow">ROOM SCHEDULE</div>
+            <h2 id="rooms-title">Room Schedule</h2>
+            <p>Search by name to view each room's weekly occupancy.</p>
+          </div>
+        </div>
+        <div class="section-tools">
+          <span class="count-chip" id="room-count">No rooms yet</span>
+          <div class="picker-host" id="room-picker"></div>
+        </div>
+      </div>
+      <div id="room-view"></div>
+    </section>
+
+    <section class="section shell" id="courses" aria-labelledby="courses-title">
+      <div class="section-head">
+        <div class="section-heading">
+          <span class="section-num">04</span>
+          <div class="section-head-copy">
+            <div class="eyebrow">COURSE × ROOM</div>
+            <h2 id="courses-title">Courses &amp; Rooms</h2>
+            <p>See which rooms each course uses, all in one table.</p>
+          </div>
+        </div>
+        <div class="section-tools">
+          <span class="count-chip" id="course-count">No courses yet</span>
+        </div>
+      </div>
+      <div id="course-view"></div>
+    </section>
+  </main>
+
+  <footer class="footer shell">
+    <span class="footer-brand"><span class="footer-dot"></span>Weekly Timetable</span>
+    <span class="footnote">
+      <span>Fixed weekly schedule</span>
+      <span>Monday – Friday · 7 periods a day</span>
+      <span>Automatically summarized from the same schedule records</span>
+    </span>
+  </footer>
+
+  <noscript>
+    <div class="noscript">This page requires JavaScript to generate the timetable.</div>
+  </noscript>
+
+<!-- ====================================================================
+     Enter schedule data here: SCHEDULE_DATA in the script at the bottom.
+     ==================================================================== -->
+<script>
+/* ====================================================================
+   Schedule data
+   --------------------------------------------------------------------
+   Only individual student lessons need to be entered here.
+   Teacher schedules, room schedules, and the course-to-room table are
+   generated automatically.
+
+   day: 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday
+   period: 1–7
+
+   Example structure (uncomment and add real data):
+   students: [
+     {
+       name: "Student name",
+       lessons: [
+         { course: "Course name", teacher: "Teacher name", room: "Room name", day: 1, period: 1 }
+       ]
+     }
+   ]
+   ==================================================================== */
+const SCHEDULE_DATA = {
+  students: [
+    {
+      name: "Avery Chen",
+      lessons: [
+        { course: "Algebra I", teacher: "Maya Patel", room: "N201", day: 1, period: 1 },
+        { course: "English 9", teacher: "Jon Rivera", room: "N101", day: 1, period: 2 },
+        { course: "Biology", teacher: "Sofia Bennett", room: "S110", day: 1, period: 3 }
+      ]
+    },
+    {
+      name: "Bianca Diaz",
+      lessons: [
+        { course: "Algebra I", teacher: "Maya Patel", room: "N201", day: 1, period: 1 },
+        { course: "English 9", teacher: "Jon Rivera", room: "N101", day: 1, period: 2 },
+        { course: "Studio Art", teacher: "Priya Shah", room: "A105", day: 1, period: 4 }
+      ]
+    },
+    {
+      name: "Carlos Flores",
+      lessons: [
+        { course: "Algebra I", teacher: "Maya Patel", room: "N201", day: 1, period: 1 },
+        { course: "English 9", teacher: "Jon Rivera", room: "N101", day: 1, period: 2 },
+        { course: "Biology", teacher: "Sofia Bennett", room: "S110", day: 1, period: 3 }
+      ]
+    },
+    {
+      name: "Devon Green",
+      lessons: [
+        { course: "Algebra I", teacher: "Maya Patel", room: "N201", day: 1, period: 1 },
+        { course: "English 9", teacher: "Jon Rivera", room: "N101", day: 1, period: 2 },
+        { course: "Studio Art", teacher: "Priya Shah", room: "A105", day: 1, period: 4 }
+      ]
+    },
+    {
+      name: "Elena Hall",
+      lessons: [
+        { course: "English 10", teacher: "Jon Rivera", room: "N101", day: 1, period: 1 },
+        { course: "Geometry", teacher: "Maya Patel", room: "E210", day: 1, period: 2 },
+        { course: "World History", teacher: "Marcus Thompson", room: "E210", day: 1, period: 3 }
+      ]
+    },
+    {
+      name: "Farah Ibrahim",
+      lessons: [
+        { course: "English 10", teacher: "Jon Rivera", room: "N101", day: 1, period: 1 },
+        { course: "Geometry", teacher: "Maya Patel", room: "E210", day: 1, period: 2 },
+        { course: "Studio Art", teacher: "Priya Shah", room: "A105", day: 1, period: 4 }
+      ]
+    },
+    {
+      name: "Gavin Jones",
+      lessons: [
+        { course: "English 10", teacher: "Jon Rivera", room: "N101", day: 1, period: 1 },
+        { course: "Geometry", teacher: "Maya Patel", room: "E210", day: 1, period: 2 },
+        { course: "World History", teacher: "Marcus Thompson", room: "E210", day: 1, period: 3 }
+      ]
+    },
+    {
+      name: "Hana Kim",
+      lessons: [
+        { course: "English 10", teacher: "Jon Rivera", room: "N101", day: 1, period: 1 },
+        { course: "Geometry", teacher: "Maya Patel", room: "E210", day: 1, period: 2 },
+        { course: "Studio Art", teacher: "Priya Shah", room: "A105", day: 1, period: 4 }
+      ]
+    },
+    {
+      name: "Isaac Lee",
+      lessons: [
+        { course: "Chemistry", teacher: "Sofia Bennett", room: "S110", day: 1, period: 2 },
+        { course: "US History", teacher: "Marcus Thompson", room: "N201", day: 1, period: 3 },
+        { course: "Studio Art", teacher: "Priya Shah", room: "A105", day: 1, period: 4 }
+      ]
+    },
+    {
+      name: "Jada Moore",
+      lessons: [
+        { course: "Chemistry", teacher: "Sofia Bennett", room: "S110", day: 1, period: 2 },
+        { course: "US History", teacher: "Marcus Thompson", room: "N201", day: 1, period: 3 },
+        { course: "Studio Art", teacher: "Priya Shah", room: "A105", day: 1, period: 4 }
+      ]
+    },
+    {
+      name: "Kai Nguyen",
+      lessons: [
+        { course: "Chemistry", teacher: "Sofia Bennett", room: "S110", day: 1, period: 2 },
+        { course: "US History", teacher: "Marcus Thompson", room: "N201", day: 1, period: 3 },
+        { course: "Studio Art", teacher: "Priya Shah", room: "A105", day: 1, period: 4 }
+      ]
+    },
+    {
+      name: "Lina Ortiz",
+      lessons: [
+        { course: "Chemistry", teacher: "Sofia Bennett", room: "S110", day: 1, period: 2 },
+        { course: "US History", teacher: "Marcus Thompson", room: "N201", day: 1, period: 3 },
+        { course: "Studio Art", teacher: "Priya Shah", room: "A105", day: 1, period: 4 }
+      ]
+    }
+  ]
+};
+
+(function () {
+  "use strict";
+
+  const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  const PERIODS = [1, 2, 3, 4, 5, 6, 7];
+  const PERIOD_TIMES = {
+    1: "8:00–8:50",
+    2: "9:00–9:50",
+    3: "10:00–10:50",
+    4: "11:00–11:50",
+    5: "12:00–12:50"
+  };
+  const COURSE_ORDER = ["Algebra I", "Geometry", "English 9", "English 10", "Biology", "Chemistry", "World History", "US History", "Studio Art"];
+  const collator = new Intl.Collator("en", { sensitivity: "base" });
+
+  const COURSE_COLORS = {
+    "Algebra I": { color: "#2f5ca8", tint: "#e7eef9" },
+    "Geometry": { color: "#165e68", tint: "#e1f0f1" },
+    "English 9": { color: "#6a4c9b", tint: "#eee9f6" },
+    "English 10": { color: "#8a4a1e", tint: "#f7eddd" },
+    "Biology": { color: "#326638", tint: "#e7f0e7" },
+    "Chemistry": { color: "#58631f", tint: "#eff1e0" },
+    "World History": { color: "#8e3b44", tint: "#f6e7e4" },
+    "US History": { color: "#9e4e10", tint: "#f8ebdc" },
+    "Studio Art": { color: "#a34670", tint: "#f6e7ee" }
+  };
+
+  const FALLBACK_COLORS = [
+    { color: "#7a4e2d", tint: "#f5ece3" },
+    { color: "#3e5d8c", tint: "#e9eef7" },
+    { color: "#6b4a7a", tint: "#f1eaf4" },
+    { color: "#2f6b5a", tint: "#e5f1ec" },
+    { color: "#7a5b1e", tint: "#f6efdd" },
+    { color: "#7d3f45", tint: "#f6e8e8" },
+    { color: "#466b7a", tint: "#e8f0f2" },
+    { color: "#6b5b2e", tint: "#f3efe2" }
+  ];
+
+  const PICKER_CONFIG = {
+    student: {
+      caption: "Student",
+      empty: "No students yet",
+      placeholder: "Select a student",
+      search: "Search students by name",
+      listLabel: "Student list",
+      icon: "user"
+    },
+    teacher: {
+      caption: "Teacher",
+      empty: "No teachers yet",
+      placeholder: "Select a teacher",
+      search: "Search teachers by name",
+      listLabel: "Teacher list",
+      icon: "presentation"
+    },
+    room: {
+      caption: "Room",
+      empty: "No rooms yet",
+      placeholder: "Select a room",
+      search: "Search rooms by name",
+      listLabel: "Room list",
+      icon: "door"
+    }
+  };
+
+  const ICONS = {
+    user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    door: '<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.562Z"/>',
+    presentation: '<path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/>',
+    book: '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+    search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    chevronDown: '<path d="m6 9 6 6 6-6"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>'
+  };
+
+  const state = {
+    studentId: null,
+    teacher: null,
+    room: null,
+    openPicker: null,
+    active: -1
+  };
+
+  let model = null;
+
+  function icon(name, size) {
+    const inner = ICONS[name] || "";
+    return '<svg class="ui-icon" width="' + (size || 16) + '" height="' + (size || 16) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + inner + "</svg>";
+  }
+
+  function esc(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+  }
+
+  function text(value) {
+    if (typeof value === "string") return value.trim();
+    if (typeof value === "number") return String(value).trim();
+    return "";
+  }
+
+  function initialOf(name) {
+    return Array.from(text(name))[0] || "?";
+  }
+
+  function countLabel(count, singular, plural) {
+    return count + " " + (count === 1 ? singular : (plural || singular + "s"));
+  }
+
+  function hashString(value) {
+    let hash = 0;
+    const str = String(value);
+    for (let i = 0; i < str.length; i += 1) {
+      hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash);
+  }
+
+  function courseStyle(name) {
+    if (COURSE_COLORS[name]) return COURSE_COLORS[name];
+    return FALLBACK_COLORS[hashString(name) % FALLBACK_COLORS.length];
+  }
+
+  function parseDay(value) {
+    if (typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 5) {
+      return value;
+    }
+    const raw = text(value);
+    const names = {
+      monday: 1, mon: 1,
+      tuesday: 2, tue: 2, tues: 2,
+      wednesday: 3, wed: 3,
+      thursday: 4, thu: 4, thur: 4, thurs: 4,
+      friday: 5, fri: 5
+    };
+    const key = raw.toLowerCase();
+    if (names[key]) return names[key];
+    const num = Number(raw);
+    return Number.isInteger(num) && num >= 1 && num <= 5 ? num : null;
+  }
+
+  function parsePeriod(value) {
+    if (typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 7) {
+      return value;
+    }
+    const match = text(value).match(/(\d+)/);
+    if (!match) return null;
+    const num = Number(match[1]);
+    return Number.isInteger(num) && num >= 1 && num <= 7 ? num : null;
+  }
+
+  function normalizeLesson(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const day = parseDay(raw.day);
+    const period = parsePeriod(raw.period);
+    const course = text(raw.course) || text(raw.subject);
+    if (!day || !period || !course) return null;
+    return {
+      course: course,
+      teacher: text(raw.teacher) || text(raw.teacherName),
+      room: text(raw.room) || text(raw.roomName),
+      day: day,
+      period: period
+    };
+  }
+
+  function normalizeData(raw) {
+    const source = Array.isArray(raw)
+      ? raw
+      : raw && Array.isArray(raw.students)
+        ? raw.students
+        : [];
+    return source.map(function (student, index) {
+      if (!student || typeof student !== "object") return null;
+      const name = text(student.name) || "Student " + (index + 1);
+      const rawLessons = Array.isArray(student.lessons) ? student.lessons : [];
+      return {
+        name: name,
+        block: text(student.block).toUpperCase(),
+        lessons: rawLessons.map(normalizeLesson).filter(Boolean)
+      };
+    }).filter(Boolean);
+  }
+
+  function countUniqueStudents(sessions) {
+    const set = new Set();
+    sessions.forEach(function (session) {
+      session.students.forEach(function (id) {
+        set.add(id);
+      });
+    });
+    return set.size;
+  }
+
+  function compareCourses(a, b) {
+    const ai = COURSE_ORDER.indexOf(a.name);
+    const bi = COURSE_ORDER.indexOf(b.name);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return collator.compare(a.name, b.name);
+  }
+
+  function buildModel(students) {
+    const studentById = new Map();
+    const teacherMaps = new Map();
+    const roomMaps = new Map();
+    const courseMap = new Map();
+
+    students.forEach(function (student, index) {
+      student.id = "student-" + index;
+      studentById.set(student.id, student);
+
+      const seen = new Set();
+      student.lessons = student.lessons.filter(function (lesson) {
+        const key = [lesson.course, lesson.teacher, lesson.room, lesson.day, lesson.period].join("\u0001");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      student.lessons.forEach(function (lesson) {
+        let course = courseMap.get(lesson.course);
+        if (!course) {
+          course = {
+            name: lesson.course,
+            teachers: new Set(),
+            rooms: new Set(),
+            students: new Set(),
+            sessions: new Map()
+          };
+          courseMap.set(lesson.course, course);
+        }
+        course.students.add(student.id);
+        if (lesson.teacher) course.teachers.add(lesson.teacher);
+        if (lesson.room) course.rooms.add(lesson.room);
+        const courseKey = [lesson.teacher, lesson.room, lesson.day, lesson.period].join("\u0001");
+        let courseSession = course.sessions.get(courseKey);
+        if (!courseSession) {
+          courseSession = {
+            course: lesson.course,
+            teacher: lesson.teacher,
+            room: lesson.room,
+            day: lesson.day,
+            period: lesson.period,
+            students: new Set()
+          };
+          course.sessions.set(courseKey, courseSession);
+        }
+        courseSession.students.add(student.id);
+
+        if (lesson.teacher) {
+          if (!teacherMaps.has(lesson.teacher)) teacherMaps.set(lesson.teacher, new Map());
+          const sessions = teacherMaps.get(lesson.teacher);
+          const key = [lesson.course, lesson.room, lesson.day, lesson.period].join("\u0001");
+          let session = sessions.get(key);
+          if (!session) {
+            session = {
+              course: lesson.course,
+              room: lesson.room,
+              teacher: lesson.teacher,
+              day: lesson.day,
+              period: lesson.period,
+              students: new Set()
+            };
+            sessions.set(key, session);
+          }
+          session.students.add(student.id);
+        }
+
+        if (lesson.room) {
+          if (!roomMaps.has(lesson.room)) roomMaps.set(lesson.room, new Map());
+          const sessions = roomMaps.get(lesson.room);
+          const key = [lesson.course, lesson.teacher, lesson.day, lesson.period].join("\u0001");
+          let session = sessions.get(key);
+          if (!session) {
+            session = {
+              course: lesson.course,
+              teacher: lesson.teacher,
+              room: lesson.room,
+              day: lesson.day,
+              period: lesson.period,
+              students: new Set()
+            };
+            sessions.set(key, session);
+          }
+          session.students.add(student.id);
+        }
+      });
+    });
+
+    const teachers = Array.from(teacherMaps.keys()).sort(collator.compare);
+    const rooms = Array.from(roomMaps.keys()).sort(collator.compare);
+
+    const teacherData = new Map();
+    teachers.forEach(function (name) {
+      const sessions = Array.from(teacherMaps.get(name).values());
+      teacherData.set(name, {
+        sessions: sessions,
+        sessionCount: sessions.length,
+        courseCount: new Set(sessions.map(function (s) { return s.course; })).size,
+        studentCount: countUniqueStudents(sessions),
+        roomCount: new Set(sessions.map(function (s) { return s.room; }).filter(Boolean)).size
+      });
+    });
+
+    const roomData = new Map();
+    rooms.forEach(function (name) {
+      const sessions = Array.from(roomMaps.get(name).values());
+      roomData.set(name, {
+        sessions: sessions,
+        sessionCount: sessions.length,
+        busySlots: new Set(sessions.map(function (s) { return s.day + "-" + s.period; })).size,
+        teacherCount: new Set(sessions.map(function (s) { return s.teacher; }).filter(Boolean)).size,
+        studentCount: countUniqueStudents(sessions)
+      });
+    });
+
+    const courses = Array.from(courseMap.values()).sort(compareCourses).map(function (course) {
+      return {
+        name: course.name,
+        teachers: Array.from(course.teachers).sort(collator.compare),
+        rooms: Array.from(course.rooms).sort(collator.compare),
+        sessionCount: course.sessions.size,
+        studentCount: course.students.size
+      };
+    });
+
+    return {
+      students: students,
+      studentById: studentById,
+      teachers: teachers,
+      teacherData: teacherData,
+      rooms: rooms,
+      roomData: roomData,
+      courses: courses
+    };
+  }
+
+  function setText(selector, value) {
+    const node = document.querySelector(selector);
+    if (node) node.textContent = value;
+  }
+
+  function renderOverview() {
+    const hasData = model.students.length > 0;
+    setText('[data-stat="students"]', hasData ? String(model.students.length) : "—");
+    setText('[data-stat="teachers"]', hasData ? String(model.teachers.length) : "—");
+    setText('[data-stat="rooms"]', hasData ? String(model.rooms.length) : "—");
+    setText('[data-stat="courses"]', hasData ? String(model.courses.length) : "—");
+  }
+
+  function renderCounts() {
+    setText("#student-count", model.students.length ? countLabel(model.students.length, "student") : "No students yet");
+    setText("#teacher-count", model.teachers.length ? countLabel(model.teachers.length, "teacher") : "No teachers yet");
+    setText("#room-count", model.rooms.length ? countLabel(model.rooms.length, "room") : "No rooms yet");
+    setText("#course-count", model.courses.length ? countLabel(model.courses.length, "course") : "No courses yet");
+  }
+
+  function pickerOptions(kind) {
+    if (kind === "student") {
+      return model.students.map(function (student) {
+        return {
+          value: student.id,
+          name: student.name,
+          meta: (student.block ? "Block " + student.block + " · " : "") + countLabel(student.lessons.length, "lesson"),
+          symbol: '<span class="avatar-initial">' + esc(initialOf(student.name)) + "</span>",
+          tone: "tone-brand"
+        };
+      });
+    }
+    if (kind === "teacher") {
+      return model.teachers.map(function (name) {
+        const data = model.teacherData.get(name);
+        return {
+          value: name,
+          name: name,
+          meta: countLabel(data.sessionCount, "lesson") + " · " + countLabel(data.courseCount, "course"),
+          symbol: '<span class="avatar-initial">' + esc(initialOf(name)) + "</span>",
+          tone: "tone-ochre"
+        };
+      });
+    }
+    return model.rooms.map(function (name) {
+      const data = model.roomData.get(name);
+      return {
+        value: name,
+        name: name,
+        meta: countLabel(data.sessionCount, "lesson") + " · " + data.busySlots + "/35 slots",
+        symbol: icon("door", 14),
+        tone: "tone-slate"
+      };
+    });
+  }
+
+  function selectedPickerValue(kind) {
+    if (kind === "student") return state.studentId;
+    if (kind === "teacher") return state.teacher;
+    return state.room;
+  }
+
+  function renderPicker(kind) {
+    const host = document.getElementById(kind + "-picker");
+    if (!host) return;
+    const config = PICKER_CONFIG[kind];
+    const options = pickerOptions(kind);
+    const selectedValue = selectedPickerValue(kind);
+    const selected = options.find(function (option) { return option.value === selectedValue; }) || null;
+
+    if (!options.length) {
+      host.innerHTML =
+        '<div class="picker" data-kind="' + kind + '">' +
+          '<button class="picker-trigger" type="button" disabled aria-disabled="true">' +
+            '<span class="picker-symbol tone-muted">' + icon(config.icon, 14) + "</span>" +
+            '<span class="picker-text">' +
+              '<span class="picker-caption">' + config.caption + "</span>" +
+              '<span class="picker-value">' + config.empty + "</span>" +
+            "</span>" +
+            '<span class="picker-caret">' + icon("chevronDown", 15) + "</span>" +
+          "</button>" +
+        "</div>";
+      return;
+    }
+
+    const triggerSymbol = selected
+      ? selected.symbol
+      : icon(config.icon, 14);
+    const triggerTone = selected ? selected.tone : "tone-muted";
+
+    const optionHtml = options.map(function (option, index) {
+      const isSelected = option.value === selectedValue;
+      return (
+        '<button class="picker-option' + (isSelected ? " is-selected" : "") + '" type="button" role="option"' +
+          ' id="' + kind + '-picker-option-' + index + '"' +
+          ' aria-selected="' + (isSelected ? "true" : "false") + '"' +
+          ' data-picker-option data-value="' + esc(option.value) + '" data-name="' + esc(option.name) + '">' +
+          '<span class="option-symbol ' + option.tone + '">' + option.symbol + "</span>" +
+          '<span class="option-copy">' +
+            '<span class="option-name">' + esc(option.name) + "</span>" +
+            '<span class="option-meta">' + esc(option.meta) + "</span>" +
+          "</span>" +
+          '<span class="option-check">' + icon("check", 13) + "</span>" +
+        "</button>"
+      );
+    }).join("");
+
+    host.innerHTML =
+      '<div class="picker" data-kind="' + kind + '">' +
+        '<button class="picker-trigger" type="button" data-picker-trigger aria-haspopup="listbox" aria-expanded="false">' +
+          '<span class="picker-symbol ' + triggerTone + '" data-picker-symbol>' + triggerSymbol + "</span>" +
+          '<span class="picker-text">' +
+            '<span class="picker-caption">' + config.caption + "</span>" +
+            '<span class="picker-value" data-picker-value>' + esc(selected ? selected.name : config.placeholder) + "</span>" +
+          "</span>" +
+          '<span class="picker-caret">' + icon("chevronDown", 15) + "</span>" +
+        "</button>" +
+        '<div class="picker-popover" data-picker-popover hidden>' +
+          '<div class="picker-search">' +
+            icon("search", 14) +
+            '<input type="text" data-picker-search placeholder="' + esc(config.search) + '" aria-label="' + esc(config.search) + '" autocomplete="off" spellcheck="false" aria-controls="' + kind + '-picker-list" aria-autocomplete="list">' +
+          "</div>" +
+          '<div class="picker-options" id="' + kind + '-picker-list" role="listbox" aria-label="' + esc(config.listLabel) + '">' +
+            optionHtml +
+          "</div>" +
+          '<div class="picker-empty" data-picker-empty hidden>No matching names found</div>' +
+          '<div class="picker-foot"><span data-picker-count>' + countLabel(options.length, "item") + '</span><span>Search by name</span></div>' +
+        "</div>" +
+      "</div>";
+  }
+
+  function updatePickerSelection(kind) {
+    const picker = document.querySelector('.picker[data-kind="' + kind + '"]');
+    if (!picker) return;
+    const options = pickerOptions(kind);
+    const selectedValue = selectedPickerValue(kind);
+    const selected = options.find(function (option) { return option.value === selectedValue; });
+    if (!selected) return;
+
+    const valueNode = picker.querySelector("[data-picker-value]");
+    if (valueNode) valueNode.textContent = selected.name;
+
+    const symbolNode = picker.querySelector("[data-picker-symbol]");
+    if (symbolNode) {
+      symbolNode.className = "picker-symbol " + selected.tone;
+      symbolNode.innerHTML = selected.symbol;
+    }
+
+    picker.querySelectorAll("[data-picker-option]").forEach(function (option) {
+      const isSelected = option.dataset.value === selectedValue;
+      option.classList.toggle("is-selected", isSelected);
+      option.setAttribute("aria-selected", isSelected ? "true" : "false");
+    });
+  }
+
+  function openPicker(kind) {
+    closePicker(false);
+    const picker = document.querySelector('.picker[data-kind="' + kind + '"]');
+    if (!picker) return;
+    const trigger = picker.querySelector("[data-picker-trigger]");
+    const popover = picker.querySelector("[data-picker-popover]");
+    const search = picker.querySelector("[data-picker-search]");
+    if (!trigger || !popover || !search) return;
+
+    state.openPicker = kind;
+    state.active = -1;
+    picker.classList.add("is-open");
+    trigger.setAttribute("aria-expanded", "true");
+    popover.hidden = false;
+    search.value = "";
+    filterPicker(picker, "");
+    search.focus();
+  }
+
+  function closePicker(focusTrigger) {
+    if (!state.openPicker) return;
+    const kind = state.openPicker;
+    const picker = document.querySelector('.picker[data-kind="' + kind + '"]');
+    if (picker) {
+      const trigger = picker.querySelector("[data-picker-trigger]");
+      const popover = picker.querySelector("[data-picker-popover]");
+      const search = picker.querySelector("[data-picker-search]");
+      picker.classList.remove("is-open");
+      if (trigger) {
+        trigger.setAttribute("aria-expanded", "false");
+        if (focusTrigger) trigger.focus();
+      }
+      if (popover) popover.hidden = true;
+      if (search) {
+        search.value = "";
+        search.removeAttribute("aria-activedescendant");
+      }
+      picker.querySelectorAll("[data-picker-option]").forEach(function (option) {
+        option.classList.remove("is-active");
+        option.hidden = false;
+      });
+      const empty = picker.querySelector("[data-picker-empty]");
+      if (empty) empty.hidden = true;
+    }
+    state.openPicker = null;
+    state.active = -1;
+  }
+
+  function filterPicker(picker, query) {
+    const normalized = text(query).toLowerCase();
+    const options = Array.from(picker.querySelectorAll("[data-picker-option]"));
+    let visible = 0;
+    options.forEach(function (option) {
+      const matches = !normalized || (option.dataset.name || "").toLowerCase().indexOf(normalized) !== -1;
+      option.hidden = !matches;
+      option.classList.remove("is-active");
+      if (matches) visible += 1;
+    });
+    const empty = picker.querySelector("[data-picker-empty]");
+    if (empty) empty.hidden = visible > 0;
+    const count = picker.querySelector("[data-picker-count]");
+    if (count) count.textContent = countLabel(visible, "item");
+    const search = picker.querySelector("[data-picker-search]");
+    if (search) search.removeAttribute("aria-activedescendant");
+    state.active = -1;
+  }
+
+  function moveActive(delta) {
+    if (!state.openPicker) return;
+    const picker = document.querySelector('.picker[data-kind="' + state.openPicker + '"]');
+    if (!picker) return;
+    const options = Array.from(picker.querySelectorAll("[data-picker-option]")).filter(function (option) {
+      return !option.hidden;
+    });
+    if (!options.length) return;
+    if (state.active === -1) {
+      state.active = delta > 0 ? 0 : options.length - 1;
+    } else {
+      state.active = (state.active + delta + options.length) % options.length;
+    }
+    options.forEach(function (option, index) {
+      option.classList.toggle("is-active", index === state.active);
+    });
+    const active = options[state.active];
+    const search = picker.querySelector("[data-picker-search]");
+    if (search) search.setAttribute("aria-activedescendant", active.id);
+    active.scrollIntoView({ block: "nearest" });
+  }
+
+  function chooseActive() {
+    if (!state.openPicker) return;
+    const picker = document.querySelector('.picker[data-kind="' + state.openPicker + '"]');
+    if (!picker) return;
+    const options = Array.from(picker.querySelectorAll("[data-picker-option]")).filter(function (option) {
+      return !option.hidden;
+    });
+    if (!options.length) return;
+    const target = state.active >= 0 ? options[state.active] : options[0];
+    selectValue(picker.dataset.kind, target.dataset.value);
+  }
+
+  function selectValue(kind, value) {
+    if (kind === "student") {
+      state.studentId = value;
+      renderStudentSection();
+    } else if (kind === "teacher") {
+      state.teacher = value;
+      renderTeacherSection();
+    } else if (kind === "room") {
+      state.room = value;
+      renderRoomSection();
+    }
+    updatePickerSelection(kind);
+    closePicker(false);
+    const picker = document.querySelector('.picker[data-kind="' + kind + '"]');
+    const trigger = picker ? picker.querySelector("[data-picker-trigger]") : null;
+    if (trigger) trigger.focus();
+  }
+
+  function groupBySlot(items) {
+    const slots = new Map();
+    items.forEach(function (item) {
+      const key = item.day + "-" + item.period;
+      if (!slots.has(key)) slots.set(key, []);
+      slots.get(key).push(item);
+    });
+    return slots;
+  }
+
+  function renderLesson(item, mode) {
+    const style = courseStyle(item.course);
+    let meta;
+    if (mode === "student") {
+      meta =
+        '<span class="lesson-line">' + icon("user", 10) + "<span>" + esc(item.teacher || "—") + "</span></span>" +
+        '<span class="lesson-line">' + icon("door", 10) + "<span>" + esc(item.room || "—") + "</span></span>";
+    } else if (mode === "teacher") {
+      meta =
+        '<span class="lesson-line">' + icon("door", 10) + "<span>" + esc(item.room || "—") + "</span></span>" +
+        '<span class="lesson-line">' + icon("users", 10) + "<span>" + esc(countLabel(item.studentCount || 0, "student")) + "</span></span>";
+    } else {
+      meta =
+        '<span class="lesson-line">' + icon("user", 10) + "<span>" + esc(item.teacher || "—") + "</span></span>" +
+        '<span class="lesson-line">' + icon("users", 10) + "<span>" + esc(countLabel(item.studentCount || 0, "student")) + "</span></span>";
+    }
+    return (
+      '<div class="lesson" style="--c:' + style.color + ";--tint:" + style.tint + '">' +
+        '<div class="lesson-title"><span class="lesson-dot"></span><span class="lesson-name">' + esc(item.course) + "</span></div>" +
+        '<div class="lesson-meta">' + meta + "</div>" +
+      "</div>"
+    );
+  }
+
+  function renderTimetable(slots, mode, label) {
+    const head =
+      '<thead><tr><th scope="col" class="tt-corner">Period</th>' +
+      DAYS.map(function (day) { return '<th scope="col">' + day + "</th>"; }).join("") +
+      "</tr></thead>";
+
+    const body = PERIODS.map(function (period) {
+      const cells = DAYS.map(function (_, index) {
+        const day = index + 1;
+        const items = slots.get(day + "-" + period) || [];
+        let inner;
+        if (!items.length) {
+          inner = '<div class="slot-empty" aria-hidden="true"></div><span class="sr-only">No lesson</span>';
+        } else {
+          inner = '<div class="lesson-stack">' + items.map(function (item) {
+            return renderLesson(item, mode);
+          }).join("") + "</div>";
+        }
+        return '<td class="tt-cell">' + inner + "</td>";
+      }).join("");
+      const time = PERIOD_TIMES[period];
+      return '<tr><th scope="row"><span class="tt-period">Period ' + period + "</span>" +
+        (time ? '<span class="tt-time">' + time + "</span>" : "") +
+        "</th>" + cells + "</tr>";
+    }).join("");
+
+    return (
+      '<div class="tt-scroll" tabindex="0" aria-label="' + esc(label) + ', scrollable horizontally">' +
+        '<table class="tt">' +
+          '<caption class="sr-only">' + esc(label) + "</caption>" +
+          head +
+          "<tbody>" + body + "</tbody>" +
+        "</table>" +
+      "</div>"
+    );
+  }
+
+  function renderTimetableCard(options) {
+    const metrics = options.metrics.map(function (metric) {
+      const label = metric.singular && Number(metric.value) === 1 ? metric.singular : metric.label;
+      return (
+        '<div class="tt-metric">' +
+          "<strong>" + esc(String(metric.value)) + "</strong>" +
+          "<span>" + esc(label) + "</span>" +
+        "</div>"
+      );
+    }).join("");
+
+    return (
+      '<div class="timetable-card card">' +
+        '<div class="tt-card-head">' +
+          '<div class="tt-identity">' +
+            '<div class="tt-symbol ' + options.tone + '">' + options.symbol + "</div>" +
+            '<div class="tt-id-copy">' +
+              '<div class="tt-kicker">' + esc(options.kicker) + "</div>" +
+              "<h3>" + esc(options.name) + "</h3>" +
+            "</div>" +
+          "</div>" +
+          '<div class="tt-metrics">' + metrics + "</div>" +
+        "</div>" +
+        (options.note ? '<div class="tt-note">' + esc(options.note) + "</div>" : "") +
+        options.table +
+      "</div>"
+    );
+  }
+
+  function renderEmptyCard(options) {
+    return (
+      '<div class="card empty-card">' +
+        '<div class="empty-inner">' +
+          '<div class="empty-graphic ' + options.tone + '">' + icon(options.icon, 20) + "</div>" +
+          "<h3>" + esc(options.title) + "</h3>" +
+          "<p>" + esc(options.description) + "</p>" +
+        "</div>" +
+      "</div>"
+    );
+  }
+
+  function renderStudentSection() {
+    const host = document.getElementById("student-view");
+    if (!host) return;
+    const student = state.studentId ? model.studentById.get(state.studentId) : null;
+    if (!student) {
+      host.innerHTML = renderEmptyCard({
+        tone: "tone-brand",
+        icon: "user",
+        title: "No student timetables yet",
+        description: "Add students and their individual lessons, and the weekly timetables will appear here automatically."
+      });
+      return;
+    }
+
+    const slots = groupBySlot(student.lessons);
+    const teacherCount = new Set(student.lessons.map(function (lesson) { return lesson.teacher; }).filter(Boolean)).size;
+    const roomCount = new Set(student.lessons.map(function (lesson) { return lesson.room; }).filter(Boolean)).size;
+
+    host.innerHTML = renderTimetableCard({
+      tone: "tone-brand",
+      symbol: '<span class="avatar-initial">' + esc(initialOf(student.name)) + "</span>",
+      kicker: "Student Schedule" + (student.block ? " · Block " + student.block : ""),
+      name: student.name,
+      metrics: [
+        { value: student.lessons.length, label: "Lessons", singular: "Lesson" },
+        { value: teacherCount, label: "Teachers", singular: "Teacher" },
+        { value: roomCount, label: "Rooms", singular: "Room" }
+      ],
+      note: student.lessons.length ? "" : "No lessons scheduled this week.",
+      table: renderTimetable(slots, "student", student.name + " — Weekly Timetable")
+    });
+  }
+
+  function renderTeacherSection() {
+    const host = document.getElementById("teacher-view");
+    if (!host) return;
+    const data = state.teacher ? model.teacherData.get(state.teacher) : null;
+    if (!data) {
+      host.innerHTML = renderEmptyCard({
+        tone: "tone-ochre",
+        icon: "presentation",
+        title: "No teacher timetables yet",
+        description: "Teacher timetables are generated automatically from student lesson data."
+      });
+      return;
+    }
+
+    const sessions = data.sessions.map(function (session) {
+      return {
+        course: session.course,
+        room: session.room,
+        teacher: session.teacher,
+        day: session.day,
+        period: session.period,
+        studentCount: session.students.size
+      };
+    });
+    const slots = groupBySlot(sessions);
+
+    host.innerHTML = renderTimetableCard({
+      tone: "tone-ochre",
+      symbol: '<span class="avatar-initial">' + esc(initialOf(state.teacher)) + "</span>",
+      kicker: "Teacher Schedule",
+      name: state.teacher,
+      metrics: [
+        { value: data.sessionCount, label: "Lessons", singular: "Lesson" },
+        { value: data.courseCount, label: "Courses", singular: "Course" },
+        { value: data.studentCount, label: "Students", singular: "Student" }
+      ],
+      note: "",
+      table: renderTimetable(slots, "teacher", state.teacher + " — Weekly Timetable")
+    });
+  }
+
+  function renderRoomSection() {
+    const host = document.getElementById("room-view");
+    if (!host) return;
+    const data = state.room ? model.roomData.get(state.room) : null;
+    if (!data) {
+      host.innerHTML = renderEmptyCard({
+        tone: "tone-slate",
+        icon: "door",
+        title: "No room timetables yet",
+        description: "Room timetables are generated automatically from student lesson data."
+      });
+      return;
+    }
+
+    const sessions = data.sessions.map(function (session) {
+      return {
+        course: session.course,
+        room: session.room,
+        teacher: session.teacher,
+        day: session.day,
+        period: session.period,
+        studentCount: session.students.size
+      };
+    });
+    const slots = groupBySlot(sessions);
+
+    host.innerHTML = renderTimetableCard({
+      tone: "tone-slate",
+      symbol: icon("door", 18),
+      kicker: "Room Schedule",
+      name: state.room,
+      metrics: [
+        { value: data.sessionCount, label: "Lessons", singular: "Lesson" },
+        { value: data.busySlots + " / 35", label: "Time Slots" },
+        { value: data.studentCount, label: "Students", singular: "Student" }
+      ],
+      note: "",
+      table: renderTimetable(slots, "room", state.room + " — Weekly Timetable")
+    });
+  }
+
+  function renderCourseSection() {
+    const host = document.getElementById("course-view");
+    if (!host) return;
+    if (!model.courses.length) {
+      host.innerHTML = renderEmptyCard({
+        tone: "tone-clay",
+        icon: "book",
+        title: "No course data yet",
+        description: "Add student lessons, and the course-to-room mapping will be generated automatically."
+      });
+      return;
+    }
+
+    const rows = model.courses.map(function (course) {
+      const style = courseStyle(course.name);
+      const teachers = course.teachers.length
+        ? course.teachers.map(function (name) {
+            return '<span class="person-tag">' + esc(name) + "</span>";
+          }).join("")
+        : '<span class="dash">—</span>';
+      const rooms = course.rooms.length
+        ? course.rooms.map(function (name) {
+            return '<span class="room-tag">' + icon("door", 11) + esc(name) + "</span>";
+          }).join("")
+        : '<span class="dash">—</span>';
+
+      return (
+        "<tr>" +
+          "<th scope=\"row\">" +
+            '<span class="course-name-cell">' +
+              '<span class="course-dot" style="--c:' + style.color + '"></span>' +
+              '<span class="course-name-text" title="' + esc(course.name) + '">' + esc(course.name) + "</span>" +
+            "</span>" +
+          "</th>" +
+          '<td><div class="tag-wrap">' + teachers + "</div></td>" +
+          '<td><div class="tag-wrap">' + rooms + "</div></td>" +
+          '<td class="num">' + esc(course.sessionCount) + "</td>" +
+          '<td class="num">' + esc(course.studentCount) + "</td>" +
+        "</tr>"
+      );
+    }).join("");
+
+    host.innerHTML =
+      '<div class="course-card card">' +
+        '<div class="table-scroll">' +
+          '<table class="course-table">' +
+            '<caption class="sr-only">Course and room reference</caption>' +
+            "<thead><tr>" +
+              '<th scope="col">Course</th>' +
+              '<th scope="col">Teachers</th>' +
+              '<th scope="col">Rooms</th>' +
+              '<th scope="col" class="num">Lessons / Week</th>' +
+              '<th scope="col" class="num">Students</th>' +
+            "</tr></thead>" +
+            "<tbody>" + rows + "</tbody>" +
+          "</table>" +
+        "</div>" +
+        '<p class="course-note">All rooms used by a course are listed. Weekly lesson counts and student numbers are summarized automatically from individual timetables.</p>' +
+      "</div>";
+  }
+
+  function setupEvents() {
+    document.addEventListener("click", function (event) {
+      const trigger = event.target.closest("[data-picker-trigger]");
+      if (trigger) {
+        if (trigger.disabled) return;
+        const picker = trigger.closest(".picker");
+        if (!picker) return;
+        const kind = picker.dataset.kind;
+        if (state.openPicker === kind) closePicker(true);
+        else openPicker(kind);
+        return;
+      }
+
+      const option = event.target.closest("[data-picker-option]");
+      if (option) {
+        const picker = option.closest(".picker");
+        if (!picker) return;
+        selectValue(picker.dataset.kind, option.dataset.value);
+        return;
+      }
+
+      if (!event.target.closest(".picker")) closePicker(false);
+    });
+
+    document.addEventListener("focusin", function (event) {
+      if (!state.openPicker) return;
+      const picker = document.querySelector('.picker[data-kind="' + state.openPicker + '"]');
+      if (picker && !picker.contains(event.target)) closePicker(false);
+    });
+
+    document.addEventListener("input", function (event) {
+      if (!event.target.matches("[data-picker-search]")) return;
+      const picker = event.target.closest(".picker");
+      if (!picker) return;
+      filterPicker(picker, event.target.value);
+    });
+
+    document.addEventListener("keydown", function (event) {
+      const search = event.target.closest("[data-picker-search]");
+      if (search) {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          moveActive(event.key === "ArrowDown" ? 1 : -1);
+          return;
+        }
+        if (event.key === "Enter") {
+          event.preventDefault();
+          chooseActive();
+          return;
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closePicker(true);
+          return;
+        }
+      }
+
+      if (event.key === "Escape" && state.openPicker) {
+        closePicker(true);
+      }
+    });
+  }
+
+  function setupNav() {
+    const links = Array.from(document.querySelectorAll(".section-nav a"));
+    const sections = Array.from(document.querySelectorAll("main .section"));
+
+    function activate(id) {
+      links.forEach(function (link) {
+        link.classList.toggle("is-active", link.getAttribute("href") === "#" + id);
+      });
+    }
+
+    function update() {
+      let current = "";
+      sections.forEach(function (section) {
+        if (section.getBoundingClientRect().top <= 140) current = section.id;
+      });
+      if (current) {
+        activate(current);
+      } else {
+        links.forEach(function (link) { link.classList.remove("is-active"); });
+      }
+    }
+
+    links.forEach(function (link) {
+      link.addEventListener("click", function () {
+        activate(link.getAttribute("href").slice(1));
+      });
+    });
+
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    update();
+  }
+
+  function setupTopbar() {
+    const topbar = document.getElementById("topbar");
+    if (!topbar) return;
+    function update() {
+      topbar.classList.toggle("is-scrolled", window.scrollY > 6);
+    }
+    window.addEventListener("scroll", update, { passive: true });
+    update();
+  }
+
+  function init() {
+    model = buildModel(normalizeData(SCHEDULE_DATA));
+    state.studentId = model.students.length ? model.students[0].id : null;
+    state.teacher = model.teachers.length ? model.teachers[0] : null;
+    state.room = model.rooms.length ? model.rooms[0] : null;
+
+    renderOverview();
+    renderCounts();
+    renderPicker("student");
+    renderPicker("teacher");
+    renderPicker("room");
+    renderStudentSection();
+    renderTeacherSection();
+    renderRoomSection();
+    renderCourseSection();
+    setupEvents();
+    setupNav();
+    setupTopbar();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1156 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timetable Input</title><style>
+:root{--navy:#12395f;--ink:#162235;--muted:#607087;--line:#d9e2ec;--green:#198754;--red:#b42318;--blue:#eaf4ff}*{box-sizing:border-box}body{margin:0;background:#f6f8fb;color:var(--ink);font:14px/1.45 Arial,"Helvetica Neue",sans-serif}main{max-width:1280px;margin:auto;padding:32px 24px 70px}h1{font-size:30px;margin:0}h2{font-size:21px;margin:0 0 8px}.hero{background:var(--navy);color:#fff;border-radius:14px;padding:26px}.hero p{margin:8px 0 0;color:#d9e8f6}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0}button{border:0;border-radius:7px;padding:9px 13px;font-weight:bold;cursor:pointer}.primary,.add{background:var(--navy);color:#fff}.secondary{background:#e4edf7;color:var(--navy)}.status{color:var(--green);font-weight:bold}.card{background:#fff;border:1px solid var(--line);border-radius:11px;padding:18px;margin:14px 0}.hint{margin:0 0 14px;color:var(--muted)}.step{display:inline-block;background:var(--navy);color:#fff;border-radius:50%;width:26px;height:26px;text-align:center;line-height:26px;margin-right:7px}table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}th{background:var(--navy);color:#fff;text-align:left;font-size:12px;padding:9px}td{padding:7px;border-top:1px solid var(--line);vertical-align:top}tr:nth-child(even) td{background:#fbfdff}.scroll{overflow-x:auto}input,select{width:100%;font:inherit;border:1px solid #b9c7d6;border-radius:5px;padding:6px;background:#fff}input:focus,select:focus{outline:2px solid #79aee5;border-color:transparent}.remove{background:none;color:var(--red)}.note{background:var(--blue);border-left:4px solid #3a83c5;border-radius:6px;padding:12px;margin:12px 0}.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed #b9c7d6;border-radius:8px}.options{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:7px;padding:8px;background:#f7fbff;border-radius:7px}.checkgrid{display:grid;gap:5px;min-width:180px}.checkgrid label{display:flex;gap:6px;align-items:center}.checkgrid input{width:auto}.choice-note{font-size:12px;color:var(--muted)}.error{color:var(--red);font-weight:bold}.ok{color:var(--green);font-weight:bold}.setup{display:grid;grid-template-columns:150px 200px auto;gap:10px;align-items:end;max-width:650px}@media(max-width:760px){main{padding:18px 12px}h1{font-size:25px}.setup{grid-template-columns:1fr}}
+</style></head><body><main>
+<section class="hero"><h1>Timetable Input</h1><p>Start from a blank form. Add courses, levels, electives, homerooms, teachers, and students yourself. Select teachers and students directly; no Ctrl/Cmd needed.</p></section>
+<div class="toolbar"><button class="primary" id="saveBtn">Save to this browser</button><button class="primary" id="excelBtn">Export Excel</button><button class="secondary" id="jsonBtn">Download JSON</button><button class="secondary" id="exampleBtn">Load 5-teacher / 40-student example</button><button class="secondary" id="clearBtn">Clear all input</button><span class="status" id="status">No data entered yet</span></div>
+<section class="card"><h2><span class="step">1</span>Homeroom</h2><p class="hint">Enter the grade, starting homeroom number, and count. The system generates names such as 10-11 and 10-12. Then set each homeroom location; students and CAS teachers can select these homerooms.</p><div class="setup"><label>Homeroom count<input id="hrCount" type="number" min="0" value="0"></label><label>Grade<input id="hrGrade" type="number" min="1" value="10"></label><label>Starting number<input id="hrStart" type="number" min="1" value="11"></label><button class="add" id="buildHr">Generate / update homerooms</button></div><div class="scroll" style="margin-top:12px"><table><thead><tr><th>Homeroom ID</th><th>Display name</th><th>Homeroom location</th><th></th></tr></thead><tbody id="hrBody"></tbody></table></div></section>
+<section class="card"><h2><span class="step">2</span>Courses</h2><p class="hint">For English, choose By level, set three options with one pick, then enter the levels. Add electives here too: choose Custom options, set four options with one pick.</p><button class="add" id="addCourse">+ Add course</button><div class="scroll" style="margin-top:12px"><table><thead><tr><th>Course ID</th><th>Course name</th><th>Periods / week</th><th>Type</th><th>Options</th><th>Student picks</th><th></th></tr></thead><tbody id="courseBody"></tbody></table></div><div class="note"><b>Type:</b>By level: each student picks one level. Custom options: students pick the indicated number of options. Required: no student choice. CAS (homeroom): the teacher also chooses a homeroom. Science can use three options with two picks.</div></section>
+<section class="card"><h2><span class="step">3</span>Teachers</h2><p class="hint">Select the levels, course options, or required courses each teacher can teach.</p><button class="add" id="addTeacher">+ Add teacher</button><div class="scroll" style="margin-top:12px"><table><thead><tr><th>Teacher ID</th><th>Name</th><th>Courses (select directly)</th><th></th></tr></thead><tbody id="teacherBody"></tbody></table></div></section>
+<section class="card"><h2><span class="step">4</span>Students</h2><p class="hint">The student table generates course columns automatically. Select each course directly and deselect it at any time.</p><button class="add" id="addStudent">+ Add student</button><div class="scroll" style="margin-top:12px"><table><thead><tr id="studentHead"></tr></thead><tbody id="studentBody"></tbody></table></div></section>
+<section class="card"><h2>Campus</h2><p class="hint">Add buildings, floors, and rooms first, then building-to-building walking times. Homeroom locations must be chosen from the rooms you entered.</p><button class="add" id="addBuilding">+ Add building</button><div class="scroll" style="margin-top:12px"><table><thead><tr><th>Building ID</th><th>Building name</th><th>Floors</th><th></th></tr></thead><tbody id="buildingBody"></tbody></table></div><button class="add" id="addRoom" style="margin-top:14px">+ Add room</button><div class="scroll" style="margin-top:12px"><table><thead><tr><th>Building</th><th>Floor</th><th>Room ID</th><th>Display name</th><th></th></tr></thead><tbody id="roomBody"></tbody></table></div><button class="add" id="addDistance" style="margin-top:14px">+ Add building distance</button><div class="scroll" style="margin-top:12px"><table><thead><tr><th>From building</th><th>To building</th><th>Walk minutes</th><th></th></tr></thead><tbody id="distanceBody"></tbody></table></div></section><section class="card"><h2>Time slots and no-class periods</h2><p class="hint">Add each daily time slot row by row. If Friday has no classes in the last two periods, add two no-class periods for Friday below.</p><button class="add" id="addTime">+ Add time slot</button><div class="scroll" style="margin-top:12px"><table><thead><tr><th>Time slot ID</th><th>Start</th><th>End</th><th></th></tr></thead><tbody id="timeBody"></tbody></table></div><button class="add" id="addBlackout" style="margin-top:14px">+ Add no-class period</button><div class="scroll" style="margin-top:12px"><table><thead><tr><th>Day</th><th>Time slot</th><th>Reason</th><th></th></tr></thead><tbody id="blackoutBody"></tbody></table></div></section></main><script>
+const fresh=()=>({homerooms:[],courses:[],teachers:[],students:[]});let data=fresh();const $=id=>document.getElementById(id),hrBody=$('hrBody'),courseBody=$('courseBody'),teacherBody=$('teacherBody'),studentBody=$('studentBody'),studentHead=$('studentHead'),status=$('status');const esc=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');const uid=(p,a)=>`${p}-${String(a.length+1).padStart(3,'0')}`;const letter=i=>String.fromCharCode(65+i);
+function usable(c){return c.options.filter(Boolean)}function resizeOptions(c,n){n=Math.max(0,Number(n)||0);while(c.options.length<n)c.options.push('');c.options=c.options.slice(0,n);c.count=n;if(c.pick>n)c.pick=n}function assignable(){return[...data.courses.flatMap(c=>c.type==='required'?[c.name||c.id]:usable(c))].filter(Boolean)}function checkList(values,selected,attrs){return `<div class="checkgrid">${values.map(v=>`<label><input type="checkbox" ${selected.includes(v)?'checked':''} ${attrs} value="${esc(v)}"><span>${esc(v)}</span></label>`).join('')}</div>`}
+function renderHr(){hrBody.innerHTML=data.homerooms.length?data.homerooms.map((h,i)=>`<tr><td><input data-hr="${i}" data-key="id" value="${esc(h.id)}"></td><td><input data-hr="${i}" data-key="name" value="${esc(h.name)}"></td><td><input data-hr="${i}" data-key="location" value="${esc(h.location)}" placeholder="e.g. A201"></td><td><button class="remove" data-remove-hr="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">Enter a homeroom count and generate homerooms first</div></td></tr>`;hrBody.querySelectorAll('[data-hr]').forEach(e=>e.onchange=x=>data.homerooms[x.target.dataset.hr][x.target.dataset.key]=x.target.value);hrBody.querySelectorAll('[data-remove-hr]').forEach(b=>b.onclick=()=>{data.homerooms.splice(Number(b.dataset.removeHr),1);renderAll('Homeroom deleted')})}
+function renderCourses(){courseBody.innerHTML=data.courses.length?data.courses.map((c,i)=>`<tr><td><input data-course="${i}" data-key="id" value="${esc(c.id)}"></td><td><input data-course="${i}" data-key="name" value="${esc(c.name)}" placeholder="e.g. English / Electives"></td><td><input type="number" min="1" data-course="${i}" data-key="periods" value="${c.periods}"></td><td><select data-course="${i}" data-key="type"><option value="level" ${c.type==='level'?'selected':''}>By level</option><option value="choice" ${c.type==='choice'?'selected':''}>Custom options</option><option value="required" ${c.type==='required'?'selected':''}>Required</option></select></td><td>${c.type==='required'?'—':`<input type="number" min="1" data-count="${i}" value="${c.count}">`}</td><td>${c.type==='required'?'—':`<input type="number" min="1" max="${c.count}" data-pick="${i}" value="${c.pick}">`}</td><td><button class="remove" data-remove-course="${i}">Delete</button></td></tr>${c.type==='required'?'':`<tr><td colspan="7"><b>${esc(c.name||'this course')}: ${c.type==='level'?'Level names':'Option name'}</b><div class="options">${c.options.map((o,j)=>`<input data-option-course="${i}" data-option="${j}" value="${esc(o)}" placeholder="Option ${j+1} name">`).join('')}</div></td></tr>`}`).join(''):`<tr><td colspan="7"><div class="empty">No courses yet</div></td></tr>`;courseBody.querySelectorAll('[data-course]').forEach(e=>e.onchange=x=>{let c=data.courses[x.target.dataset.course],k=x.target.dataset.key;c[k]=k==='periods'?Number(x.target.value):x.target.value;if(k==='type'&&c.type==='required'){c.count=0;c.pick=0;c.options=[]}if(k==='type'&&c.type!=='required'&&c.count===0){c.count=2;c.pick=1;c.options=['','']}renderAll('Course settings updated')});courseBody.querySelectorAll('[data-count]').forEach(e=>e.onchange=x=>{resizeOptions(data.courses[x.target.dataset.count],x.target.value);renderAll('Generated the matching number of input fields')});courseBody.querySelectorAll('[data-pick]').forEach(e=>e.onchange=x=>{let c=data.courses[x.target.dataset.pick];c.pick=Math.min(Math.max(1,Number(x.target.value)||1),c.count);renderAll('Student pick count updated')});courseBody.querySelectorAll('[data-option-course]').forEach(e=>e.onchange=x=>{data.courses[x.target.dataset.optionCourse].options[x.target.dataset.option]=x.target.value;renderAll('Options synced to teachers and students')});courseBody.querySelectorAll('[data-remove-course]').forEach(b=>b.onclick=()=>{data.courses.splice(Number(b.dataset.removeCourse),1);renderAll('Course deleted')})}
+function renderTeachers(){let opt=assignable();teacherBody.innerHTML=data.teachers.length?data.teachers.map((t,i)=>`<tr><td><input data-teacher="${i}" data-key="id" value="${esc(t.id)}"></td><td><input data-teacher="${i}" data-key="name" value="${esc(t.name)}"></td><td>${opt.length?checkList(opt,t.assignments,`data-teacher-check="${i}"`):'<span class="choice-note">Add courses and options first</span>'}</td><td><button class="remove" data-remove-teacher="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">No teachers yet</div></td></tr>`;teacherBody.querySelectorAll('[data-teacher]').forEach(e=>e.onchange=x=>data.teachers[x.target.dataset.teacher][x.target.dataset.key]=x.target.value);teacherBody.querySelectorAll('[data-teacher-check]').forEach(e=>e.onchange=x=>{let n=x.target.dataset.teacherCheck;data.teachers[n].assignments=[...teacherBody.querySelectorAll(`[data-teacher-check="${n}"]:checked`)].map(a=>a.value)});teacherBody.querySelectorAll('[data-remove-teacher]').forEach(b=>b.onclick=()=>{data.teachers.splice(Number(b.dataset.removeTeacher),1);renderAll('Teacher deleted')})}
+function setChoiceState(cell,course,chosen){cell.querySelector('.choice-state').className=chosen.length===course.pick?'choice-state ok':'choice-state error';cell.querySelector('.choice-state').textContent=chosen.length===course.pick?`Selected ${course.pick}`:`Select ${course.pick}`}
+function renderStudents(){let configurable=data.courses.filter(c=>c.type!=='required');studentHead.innerHTML=`<th>Student ID</th><th>Name</th><th>Homeroom</th>${configurable.map(c=>`<th>${esc(c.name||c.id)}<br><span class="choice-note">Pick ${c.pick} of ${c.count}</span></th>`).join('')}<th></th>`;studentBody.innerHTML=data.students.length?data.students.map((s,i)=>`<tr><td><input data-student="${i}" data-key="id" value="${esc(s.id)}"></td><td><input data-student="${i}" data-key="name" value="${esc(s.name)}"></td><td><select data-student="${i}" data-key="homeroom"><option value="">Select</option>${data.homerooms.map(h=>`<option value="${esc(h.id)}" ${h.id===s.homeroom?'selected':''}>${esc(h.name||h.id)}</option>`).join('')}</select></td>${configurable.map(c=>{let chosen=s.choices[c.id]||[],ok=chosen.length===c.pick;return`<td data-choice-cell="${i}" data-choice-course="${esc(c.id)}">${checkList(usable(c),chosen,`data-student-choice="${i}" data-course-id="${esc(c.id)}"`)}<span class="choice-state ${ok?'ok':'error'}">${ok?`Selected ${c.pick}`:`Select ${c.pick}`}</span></td>`}).join('')}<td><button class="remove" data-remove-student="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="99"><div class="empty">No students yet</div></td></tr>`;studentBody.querySelectorAll('[data-student]').forEach(e=>e.onchange=x=>data.students[x.target.dataset.student][x.target.dataset.key]=x.target.value);studentBody.querySelectorAll('[data-student-choice]').forEach(e=>e.onchange=x=>{let i=x.target.dataset.studentChoice,id=x.target.dataset.courseId,c=data.courses.find(a=>a.id===id),chosen=[...studentBody.querySelectorAll(`[data-student-choice="${i}"][data-course-id="${id}"]:checked`)].map(a=>a.value);if(chosen.length>c.pick){x.target.checked=false;chosen=[...studentBody.querySelectorAll(`[data-student-choice="${i}"][data-course-id="${id}"]:checked`)].map(a=>a.value);alert(`This course requires exactly ${c.pick} picks.`)}data.students[i].choices[id]=chosen;setChoiceState(x.target.closest('td'),c,chosen)});studentBody.querySelectorAll('[data-remove-student]').forEach(b=>b.onclick=()=>{data.students.splice(Number(b.dataset.removeStudent),1);renderAll('Student deleted')})}
+function renderAll(msg){renderHr();renderCourses();renderTeachers();renderStudents();if(msg)status.textContent=msg}function exportExcel(){let rows=[['Timetable Input Export'],[],['Homeroom ID','Display name','Homeroom location'],...data.homerooms.map(h=>[h.id,h.name,h.location]),[],['Course ID','Course name','Periods / week','Type','Options','Picks','Option'],...data.courses.map(c=>[c.id,c.name,c.periods,c.type,c.count,c.pick,c.options.join(' / ')]),[],['Teacher ID','Name','Courses'],...data.teachers.map(t=>[t.id,t.name,t.assignments.join(' / ')]),[],['Student ID','Name','Homeroom','Course Choices'],...data.students.map(s=>[s.id,s.name,(data.homerooms.find(h=>h.id===s.homeroom)||{}).name||s.homeroom,Object.entries(s.choices).map(([k,v])=>`${k}: ${v.join(' / ')}`).join(' | ')])];let html=`<html><head><meta charset="utf-8"></head><body><table>${rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</table>
+
+
+</body></html>`,blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='timetable-input.xls';a.click();URL.revokeObjectURL(a.href);status.textContent='Excel exported'}
+$('buildHr').onclick=()=>{let n=Math.max(0,Number($('hrCount').value)||0),p=$('hrPrefix').value.trim()||'HR';while(data.homerooms.length<n){let i=data.homerooms.length;data.homerooms.push({id:`${p}${letter(i)}`,name:`${p}${letter(i)}`,location:''})}data.homerooms=data.homerooms.slice(0,n);data.homerooms.forEach((h,i)=>{if(!h.id)h.id=`${p}${letter(i)}`;if(!h.name)h.name=h.id});renderAll('Homerooms generated. Fill in their locations.')};$('addCourse').onclick=()=>{data.courses.push({id:uid('COURSE',data.courses),name:'',periods:1,type:'level',count:2,pick:1,options:['','']});renderAll('Course added')};$('addTeacher').onclick=()=>{data.teachers.push({id:uid('TCH',data.teachers),name:'',assignments:[]});renderAll('Teacher added')};$('addStudent').onclick=()=>{data.students.push({id:uid('STU',data.students),name:'',homeroom:'',choices:{}});renderAll('Student added')};$('saveBtn').onclick=()=>{localStorage.setItem('timetable-input-v4',JSON.stringify(data));status.textContent='Saved to this browser'};$('excelBtn').onclick=exportExcel;$('jsonBtn').onclick=()=>{let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='timetable-input.json';a.click();URL.revokeObjectURL(a.href);status.textContent='JSON downloaded'};$('clearBtn').onclick=()=>{if(confirm('Clear all input?')){data=fresh();localStorage.removeItem('timetable-input-v4');$('hrCount').value=0;renderAll('Cleared')}};try{let saved=localStorage.getItem('timetable-input-v4');if(saved){data=JSON.parse(saved);$('hrCount').value=data.homerooms.length;status.textContent='Loaded the input saved in this browser'}}catch{}renderAll();
+</script><script>
+/* A small self-contained XLSX writer: no network connection or add-in required. */
+function xlsxEscape(value){return String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}
+function xlsxRows(){return [['Timetable Input Export'],[],['Homeroom ID','Display name','Homeroom location'],...data.homerooms.map(h=>[h.id,h.name,h.location]),[],['Course ID','Course name','Periods / week','Type','Options','Picks','Option'],...data.courses.map(c=>[c.id,c.name,c.periods,c.type,c.count,c.pick,c.options.join(' / ')]),[],['Teacher ID','Name','Courses'],...data.teachers.map(t=>[t.id,t.name,t.assignments.join(' / ')]),[],['Student ID','Name','Homeroom','Course Choices'],...data.students.map(s=>[s.id,s.name,(data.homerooms.find(h=>h.id===s.homeroom)||{}).name||s.homeroom,Object.entries(s.choices).map(([k,v])=>`${k}: ${v.join(' / ')}`).join(' | ')])];}
+function xlsxCrc(bytes){let c=0xffffffff;for(const b of bytes){c^=b;for(let n=0;n<8;n++)c=(c>>>1)^((c&1)?0xedb88320:0)}return(c^0xffffffff)>>>0}
+function xlsxU16(n){return new Uint8Array([n&255,(n>>>8)&255])}function xlsxU32(n){return new Uint8Array([n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255])}function xlsxJoin(parts){let len=parts.reduce((n,p)=>n+p.length,0),out=new Uint8Array(len),at=0;for(const p of parts){out.set(p,at);at+=p.length}return out}
+function xlsxZip(files){let enc=new TextEncoder(),local=[],central=[],offset=0;for(const [name,text] of files){let n=enc.encode(name),b=enc.encode(text),crc=xlsxCrc(b),head=xlsxJoin([xlsxU32(0x04034b50),xlsxU16(20),xlsxU16(0),xlsxU16(0),xlsxU16(0),xlsxU16(0),xlsxU32(crc),xlsxU32(b.length),xlsxU32(b.length),xlsxU16(n.length),xlsxU16(0),n]);local.push(head,b);let cd=xlsxJoin([xlsxU32(0x02014b50),xlsxU16(20),xlsxU16(20),xlsxU16(0),xlsxU16(0),xlsxU16(0),xlsxU16(0),xlsxU32(crc),xlsxU32(b.length),xlsxU32(b.length),xlsxU16(n.length),xlsxU16(0),xlsxU16(0),xlsxU16(0),xlsxU16(0),xlsxU32(0),xlsxU32(offset),n]);central.push(cd);offset+=head.length+b.length}let c=xlsxJoin(central),end=xlsxJoin([xlsxU32(0x06054b50),xlsxU16(0),xlsxU16(0),xlsxU16(files.length),xlsxU16(files.length),xlsxU32(c.length),xlsxU32(offset),xlsxU16(0)]);return xlsxJoin([...local,c,end])}
+function exportXlsx(){let rows=xlsxRows(),sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((row,i)=>`<row r="${i+1}">${row.map(v=>`<c t="inlineStr"><is><t>${xlsxEscape(v)}</t></is></c>`).join('')}</row>`).join('')}</sheetData></worksheet>`,files=[['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'],['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Timetable Input" sheetId="1" r:id="rId1"/></sheets></workbook>'],['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'],['xl/worksheets/sheet1.xml',sheet]],blob=new Blob([xlsxZip(files)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='timetable-input.xlsx';a.click();URL.revokeObjectURL(a.href);status.textContent='Excel (.xlsx) exported'}
+$('excelBtn').onclick=exportXlsx;
+</script><script>
+function assignable(){return data.courses.flatMap(c=>(c.type==='required'||c.type==='cas')?[c.name||c.id]:usable(c)).filter(Boolean)}
+function renderCourses(){courseBody.innerHTML=data.courses.length?data.courses.map((c,i)=>`<tr><td><input data-course="${i}" data-key="id" value="${esc(c.id)}"></td><td><input data-course="${i}" data-key="name" value="${esc(c.name)}" placeholder="e.g. English / CAS"></td><td><input type="number" min="1" data-course="${i}" data-key="periods" value="${c.periods}"></td><td><select data-course="${i}" data-key="type"><option value="level" ${c.type==='level'?'selected':''}>By level</option><option value="choice" ${c.type==='choice'?'selected':''}>Custom options</option><option value="required" ${c.type==='required'?'selected':''}>Required</option><option value="cas" ${c.type==='cas'?'selected':''}>CAS (homeroom)</option></select></td><td>${(c.type==='required'||c.type==='cas')?'—':`<input type="number" min="1" data-count="${i}" value="${c.count}">`}</td><td>${(c.type==='required'||c.type==='cas')?'—':`<input type="number" min="1" max="${c.count}" data-pick="${i}" value="${c.pick}">`}</td><td><button class="remove" data-remove-course="${i}">Delete</button></td></tr>${(c.type==='required'||c.type==='cas')?'':`<tr><td colspan="7"><b>${esc(c.name||'this course')}: ${c.type==='level'?'Level names':'Option name'}</b><div class="options">${c.options.map((o,j)=>`<input data-option-course="${i}" data-option="${j}" value="${esc(o)}" placeholder="Option ${j+1} name">`).join('')}</div></td></tr>`}`).join(''):`<tr><td colspan="7"><div class="empty">No courses yet</div></td></tr>`;courseBody.querySelectorAll('[data-course]').forEach(e=>e.onchange=x=>{let c=data.courses[x.target.dataset.course],k=x.target.dataset.key;c[k]=k==='periods'?Number(x.target.value):x.target.value;if(k==='type'&&(c.type==='required'||c.type==='cas')){c.count=0;c.pick=0;c.options=[]}if(k==='type'&&c.type!=='required'&&c.type!=='cas'&&c.count===0){c.count=2;c.pick=1;c.options=['','']}renderAll('Course settings updated')});courseBody.querySelectorAll('[data-count]').forEach(e=>e.onchange=x=>{resizeOptions(data.courses[x.target.dataset.count],x.target.value);renderAll('Generated the matching number of input fields')});courseBody.querySelectorAll('[data-pick]').forEach(e=>e.onchange=x=>{let c=data.courses[x.target.dataset.pick];c.pick=Math.min(Math.max(1,Number(x.target.value)||1),c.count);renderAll('Student pick count updated')});courseBody.querySelectorAll('[data-option-course]').forEach(e=>e.onchange=x=>{data.courses[x.target.dataset.optionCourse].options[x.target.dataset.option]=x.target.value;renderAll('Options synced to teachers and students')});courseBody.querySelectorAll('[data-remove-course]').forEach(b=>b.onclick=()=>{data.courses.splice(Number(b.dataset.removeCourse),1);renderAll('Course deleted')})}
+function renderTeachers(){let opt=assignable(),hasCas=data.courses.some(c=>c.type==='cas'),hrs=data.homerooms;teacherBody.innerHTML=data.teachers.length?data.teachers.map((t,i)=>`<tr><td><input data-teacher="${i}" data-key="id" value="${esc(t.id)}"></td><td><input data-teacher="${i}" data-key="name" value="${esc(t.name)}"></td><td>${opt.length?checkList(opt,t.assignments,`data-teacher-check="${i}"`):'<span class="choice-note">Add courses and options first</span>'}${hasCas?`<b style="display:block;margin-top:8px">CAS homerooms</b>${hrs.length?checkList(hrs.map(h=>h.id),t.casHomerooms||[],`data-cas-hr="${i}"`):'<span class="choice-note">Generate homerooms first</span>'}`:''}</td><td><button class="remove" data-remove-teacher="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">No teachers yet</div></td></tr>`;teacherBody.querySelectorAll('[data-teacher]').forEach(e=>e.onchange=x=>data.teachers[x.target.dataset.teacher][x.target.dataset.key]=x.target.value);teacherBody.querySelectorAll('[data-teacher-check]').forEach(e=>e.onchange=x=>{let n=x.target.dataset.teacherCheck;data.teachers[n].assignments=[...teacherBody.querySelectorAll(`[data-teacher-check="${n}"]:checked`)].map(a=>a.value)});teacherBody.querySelectorAll('[data-cas-hr]').forEach(e=>e.onchange=x=>{let n=x.target.dataset.casHr,t=data.teachers[n];t.casHomerooms=[...teacherBody.querySelectorAll(`[data-cas-hr="${n}"]:checked`)].map(a=>a.value)});teacherBody.querySelectorAll('[data-remove-teacher]').forEach(b=>b.onclick=()=>{data.teachers.splice(Number(b.dataset.removeTeacher),1);renderAll('Teacher deleted')})}
+function renderStudents(){let configurable=data.courses.filter(c=>c.type==='level'||c.type==='choice');studentHead.innerHTML=`<th>Student ID</th><th>Name</th><th>Homeroom</th>${configurable.map(c=>`<th>${esc(c.name||c.id)}<br><span class="choice-note">Pick ${c.pick} of ${c.count}</span></th>`).join('')}<th></th>`;studentBody.innerHTML=data.students.length?data.students.map((s,i)=>`<tr><td><input data-student="${i}" data-key="id" value="${esc(s.id)}"></td><td><input data-student="${i}" data-key="name" value="${esc(s.name)}"></td><td><select data-student="${i}" data-key="homeroom"><option value="">Select</option>${data.homerooms.map(h=>`<option value="${esc(h.id)}" ${h.id===s.homeroom?'selected':''}>${esc(h.name||h.id)}</option>`).join('')}</select></td>${configurable.map(c=>{let chosen=s.choices[c.id]||[],ok=chosen.length===c.pick;return`<td>${checkList(usable(c),chosen,`data-student-choice="${i}" data-course-id="${esc(c.id)}"`)}<span class="choice-state ${ok?'ok':'error'}">${ok?`Selected ${c.pick}`:`Select ${c.pick}`}</span></td>`}).join('')}<td><button class="remove" data-remove-student="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="99"><div class="empty">No students yet</div></td></tr>`;studentBody.querySelectorAll('[data-student]').forEach(e=>e.onchange=x=>data.students[x.target.dataset.student][x.target.dataset.key]=x.target.value);studentBody.querySelectorAll('[data-student-choice]').forEach(e=>e.onchange=x=>{let i=x.target.dataset.studentChoice,id=x.target.dataset.courseId,c=data.courses.find(a=>a.id===id),chosen=[...studentBody.querySelectorAll(`[data-student-choice="${i}"][data-course-id="${id}"]:checked`)].map(a=>a.value);if(chosen.length>c.pick){x.target.checked=false;chosen=[...studentBody.querySelectorAll(`[data-student-choice="${i}"][data-course-id="${id}"]:checked`)].map(a=>a.value);alert(`This course requires exactly ${c.pick} picks.`)}data.students[i].choices[id]=chosen;setChoiceState(x.target.closest('td'),c,chosen)});studentBody.querySelectorAll('[data-remove-student]').forEach(b=>b.onclick=()=>{data.students.splice(Number(b.dataset.removeStudent),1);renderAll('Student deleted')})}
+$('buildHr').onclick=()=>{let n=Math.max(0,Number($('hrCount').value)||0),grade=Math.max(1,Number($('hrGrade').value)||10),start=Math.max(1,Number($('hrStart').value)||11),old=new Map(data.homerooms.map(h=>[h.id,h]));data.homerooms=Array.from({length:n},(_,i)=>{let id=`${grade}-${start+i}`,saved=old.get(id);return saved||{id,name:id,location:''}});renderAll('Homerooms generated. Fill in their locations.')};$('addTeacher').onclick=()=>{data.teachers.push({id:uid('TCH',data.teachers),name:'',assignments:[],casHomerooms:[]});renderAll('Teacher added')};renderAll();
+</script><script>
+function xlsxRows(){return [['Timetable Input Export'],[],['Homeroom ID','Display name','Homeroom location'],...data.homerooms.map(h=>[h.id,h.name,h.location]),[],['Course ID','Course name','Periods / week','Type','Options','Picks','Option'],...data.courses.map(c=>[c.id,c.name,c.periods,c.type,c.count,c.pick,c.options.join(' / ')]),[],['Teacher ID','Name','Courses','CAS homerooms'],...data.teachers.map(t=>[t.id,t.name,t.assignments.join(' / '),(t.casHomerooms||[]).join(' / ')]),[],['Student ID','Name','Homeroom','Course Choices'],...data.students.map(s=>[s.id,s.name,(data.homerooms.find(h=>h.id===s.homeroom)||{}).name||s.homeroom,Object.entries(s.choices).map(([k,v])=>`${k}: ${v.join(' / ')}`).join(' | ')])];}
+</script><script>
+function ensureCampus(){data.buildings??=[];data.rooms??=[];data.distances??=[];data.timeslots??=[];data.blackouts??=[];data.homerooms??=[];data.courses??=[];data.teachers??=[];data.students??=[];data.courses.forEach(c=>{if(c.type==='level')c.pick=1});data.teachers.forEach(t=>t.casHomerooms??=[])}
+function buildingNames(){return data.buildings.map(b=>b.id).filter(Boolean)}function roomNames(){return data.rooms.map(r=>r.id).filter(Boolean)}function optionsFor(values,current,label='Select'){return `<option value="">${label}</option>${values.map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${esc(v)}</option>`).join('')}`}
+function renderCampus(){let bb=$('buildingBody'),rb=$('roomBody'),db=$('distanceBody'),tb=$('timeBody'),xb=$('blackoutBody'),buildings=buildingNames(),times=data.timeslots.map(t=>t.id).filter(Boolean);bb.innerHTML=data.buildings.length?data.buildings.map((b,i)=>`<tr><td><input data-building="${i}" data-key="id" value="${esc(b.id)}"></td><td><input data-building="${i}" data-key="name" value="${esc(b.name)}"></td><td><input type="number" min="1" data-building="${i}" data-key="floors" value="${b.floors}"></td><td><button class="remove" data-remove-building="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">No buildings yet</div></td></tr>`;rb.innerHTML=data.rooms.length?data.rooms.map((r,i)=>`<tr><td><select data-room="${i}" data-key="building">${optionsFor(buildings,r.building)}</select></td><td><input type="number" min="1" data-room="${i}" data-key="floor" value="${r.floor}"></td><td><input data-room="${i}" data-key="id" value="${esc(r.id)}"></td><td><input data-room="${i}" data-key="name" value="${esc(r.name)}"></td><td><button class="remove" data-remove-room="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="5"><div class="empty">No rooms yet</div></td></tr>`;db.innerHTML=data.distances.length?data.distances.map((d,i)=>`<tr><td><select data-distance="${i}" data-key="from">${optionsFor(buildings,d.from)}</select></td><td><select data-distance="${i}" data-key="to">${optionsFor(buildings,d.to)}</select></td><td><input type="number" min="0" data-distance="${i}" data-key="minutes" value="${d.minutes}"></td><td><button class="remove" data-remove-distance="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">No building distances yet</div></td></tr>`;tb.innerHTML=data.timeslots.length?data.timeslots.map((t,i)=>`<tr><td><input data-time="${i}" data-key="id" value="${esc(t.id)}" placeholder="e.g. P1"></td><td><input type="time" data-time="${i}" data-key="start" value="${esc(t.start)}"></td><td><input type="time" data-time="${i}" data-key="end" value="${esc(t.end)}"></td><td><button class="remove" data-remove-time="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">No time slots yet</div></td></tr>`;xb.innerHTML=data.blackouts.length?data.blackouts.map((x,i)=>`<tr><td><select data-blackout="${i}" data-key="day">${optionsFor(['Monday','Tuesday','Wednesday','Thursday','Friday'],x.day)}</select></td><td><select data-blackout="${i}" data-key="period">${optionsFor(times,x.period)}</select></td><td><input data-blackout="${i}" data-key="reason" value="${esc(x.reason)}" placeholder="e.g. No class"></td><td><button class="remove" data-remove-blackout="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">No no-class periods yet</div></td></tr>`;for(const [selector,key,list] of [['[data-building]','building',data.buildings],['[data-room]','room',data.rooms],['[data-distance]','distance',data.distances],['[data-time]','time',data.timeslots],['[data-blackout]','blackout',data.blackouts]])document.querySelectorAll(selector).forEach(e=>e.onchange=x=>{let item=list[x.target.dataset[key]],field=x.target.dataset.key;item[field]=(field==='floors'||field==='floor'||field==='minutes')?Number(x.target.value):x.target.value;renderAll('Campus and time input updated')});for(const [selector,list] of [['[data-remove-building]',data.buildings],['[data-remove-room]',data.rooms],['[data-remove-distance]',data.distances],['[data-remove-time]',data.timeslots],['[data-remove-blackout]',data.blackouts]])document.querySelectorAll(selector).forEach(e=>e.onclick=()=>{list.splice(Number(Object.values(e.dataset)[0]),1);renderAll('Item deleted')})}
+function renderHr(){let rooms=roomNames();hrBody.innerHTML=data.homerooms.length?data.homerooms.map((h,i)=>`<tr><td><input data-hr="${i}" data-key="id" value="${esc(h.id)}"></td><td><input data-hr="${i}" data-key="name" value="${esc(h.name)}"></td><td><select data-hr="${i}" data-key="location">${optionsFor(rooms,h.location,'Select a room')}</select></td><td><button class="remove" data-remove-hr="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">Enter a homeroom count and generate homerooms first</div></td></tr>`;hrBody.querySelectorAll('[data-hr]').forEach(e=>e.onchange=x=>data.homerooms[x.target.dataset.hr][x.target.dataset.key]=x.target.value);hrBody.querySelectorAll('[data-remove-hr]').forEach(b=>b.onclick=()=>{data.homerooms.splice(Number(b.dataset.removeHr),1);renderAll('Homeroom deleted')})}
+function adjustLevels(){data.courses.filter(c=>c.type==='level').forEach(c=>c.pick=1);courseBody.querySelectorAll('select[data-key="type"]').forEach(s=>{if(s.value==='level'){let cell=s.closest('tr').cells[5];cell.innerHTML='<span class="choice-note">Default: pick 1</span>'}})}
+const baseRenderAll=renderAll;renderAll=(message)=>{ensureCampus();baseRenderAll(message);renderCampus();adjustLevels()};
+$('addBuilding').onclick=()=>{ensureCampus();data.buildings.push({id:uid('BLD',data.buildings),name:'',floors:1});renderAll('Building added')};$('addRoom').onclick=()=>{ensureCampus();data.rooms.push({building:'',floor:1,id:uid('ROOM',data.rooms),name:''});renderAll('Room added')};$('addDistance').onclick=()=>{ensureCampus();data.distances.push({from:'',to:'',minutes:0});renderAll('Building distance added')};$('addTime').onclick=()=>{ensureCampus();data.timeslots.push({id:`P${data.timeslots.length+1}`,start:'',end:''});renderAll('Time slot added')};$('addBlackout').onclick=()=>{ensureCampus();data.blackouts.push({day:'Friday',period:'',reason:'No class'});renderAll('No-class period added')};courseBody.addEventListener('change',e=>{if(e.target.matches('select[data-key="type"]')&&e.target.value==='level'){data.courses[e.target.dataset.course].pick=1;renderAll('Level courses require each student to pick one level')}});ensureCampus();renderAll();
+</script><script>
+function xlsxRows(){ensureCampus();return [['Timetable Input Export'],[],['Building ID','Building name','Floors'],...data.buildings.map(b=>[b.id,b.name,b.floors]),[],['Building','Floor','Room ID','Display name'],...data.rooms.map(r=>[r.building,r.floor,r.id,r.name]),[],['From building','To building','Walk minutes'],...data.distances.map(d=>[d.from,d.to,d.minutes]),[],['Time slot ID','Start','End'],...data.timeslots.map(t=>[t.id,t.start,t.end]),[],['Day','No-class periods','Reason'],...data.blackouts.map(x=>[x.day,x.period,x.reason]),[],['Homeroom ID','Display name','Homeroom location'],...data.homerooms.map(h=>[h.id,h.name,h.location]),[],['Course ID','Course name','Periods / week','Type','Options','Picks','Option'],...data.courses.map(c=>[c.id,c.name,c.periods,c.type,c.count,c.pick,c.options.join(' / ')]),[],['Teacher ID','Name','Courses','CAS homerooms'],...data.teachers.map(t=>[t.id,t.name,t.assignments.join(' / '),(t.casHomerooms||[]).join(' / ')]),[],['Student ID','Name','Homeroom','Course Choices'],...data.students.map(s=>[s.id,s.name,(data.homerooms.find(h=>h.id===s.homeroom)||{}).name||s.homeroom,Object.entries(s.choices).map(([k,v])=>`${k}: ${v.join(' / ')}`).join(' | ')])];}
+</script><script>
+function roomAutoId(r){return r.building&&r.number?`${r.building}-${r.number}`:''}
+function renderCampus(){let bb=$('buildingBody'),rb=$('roomBody'),db=$('distanceBody'),tb=$('timeBody'),xb=$('blackoutBody'),buildings=buildingNames(),times=data.timeslots.map(t=>t.id).filter(Boolean);data.rooms.forEach(r=>{if(r.number===undefined){r.number=(r.id||'').split('-').pop()||''}r.id=roomAutoId(r)});data.distances.forEach(d=>{if(d.distance===undefined)d.distance=d.minutes??0;if(d.from===d.to)d.to='' });rb.closest('table').querySelector('thead tr').innerHTML='<th>Building</th><th>Floor</th><th>Room number</th><th>Room ID (auto) </th><th>Display name</th><th></th>';db.closest('table').querySelector('thead tr').innerHTML='<th>From building</th><th>To building</th><th>Distance (m)</th><th></th>';bb.innerHTML=data.buildings.length?data.buildings.map((b,i)=>`<tr><td><input data-building="${i}" data-key="id" value="${esc(b.id)}"></td><td><input data-building="${i}" data-key="name" value="${esc(b.name)}"></td><td><input type="number" min="1" data-building="${i}" data-key="floors" value="${b.floors}"></td><td><button class="remove" data-remove-building="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">No buildings yet</div></td></tr>`;rb.innerHTML=data.rooms.length?data.rooms.map((r,i)=>`<tr><td><select data-room="${i}" data-key="building">${optionsFor(buildings,r.building)}</select></td><td><input type="number" min="1" data-room="${i}" data-key="floor" value="${r.floor}"></td><td><input data-room="${i}" data-key="number" value="${esc(r.number)}" placeholder="e.g. 201"></td><td>${esc(roomAutoId(r)||'—')}</td><td><input data-room="${i}" data-key="name" value="${esc(r.name)}"></td><td><button class="remove" data-remove-room="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="6"><div class="empty">No rooms yet</div></td></tr>`;db.innerHTML=data.distances.length?data.distances.map((d,i)=>`<tr><td><select data-distance="${i}" data-key="from">${optionsFor(buildings,d.from)}</select></td><td><select data-distance="${i}" data-key="to">${optionsFor(buildings.filter(b=>b!==d.from),d.to)}</select></td><td><input type="number" min="0" data-distance="${i}" data-key="distance" value="${d.distance}"></td><td><button class="remove" data-remove-distance="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">No building distances yet</div></td></tr>`;tb.innerHTML=data.timeslots.length?data.timeslots.map((t,i)=>`<tr><td><input data-time="${i}" data-key="id" value="${esc(t.id)}" placeholder="e.g. P1"></td><td><input type="time" data-time="${i}" data-key="start" value="${esc(t.start)}"></td><td><input type="time" data-time="${i}" data-key="end" value="${esc(t.end)}"></td><td><button class="remove" data-remove-time="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">No time slots yet</div></td></tr>`;xb.innerHTML=data.blackouts.length?data.blackouts.map((x,i)=>`<tr><td><select data-blackout="${i}" data-key="day">${optionsFor(['Monday','Tuesday','Wednesday','Thursday','Friday'],x.day)}</select></td><td><select data-blackout="${i}" data-key="period">${optionsFor(times,x.period)}</select></td><td><input data-blackout="${i}" data-key="reason" value="${esc(x.reason)}" placeholder="e.g. No class"></td><td><button class="remove" data-remove-blackout="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">No no-class periods yet</div></td></tr>`;for(const [selector,key,list] of [['[data-building]','building',data.buildings],['[data-room]','room',data.rooms],['[data-distance]','distance',data.distances],['[data-time]','time',data.timeslots],['[data-blackout]','blackout',data.blackouts]])document.querySelectorAll(selector).forEach(e=>e.onchange=x=>{let item=list[x.target.dataset[key]],field=x.target.dataset.key;item[field]=(['floors','floor','distance'].includes(field))?Number(x.target.value):x.target.value;if(key==='room')item.id=roomAutoId(item);if(key==='distance'&&item.from===item.to)item.to='';renderAll('Campus and time input updated')});for(const [selector,list] of [['[data-remove-building]',data.buildings],['[data-remove-room]',data.rooms],['[data-remove-distance]',data.distances],['[data-remove-time]',data.timeslots],['[data-remove-blackout]',data.blackouts]])document.querySelectorAll(selector).forEach(e=>e.onclick=()=>{list.splice(Number(Object.values(e.dataset)[0]),1);renderAll('Item deleted')})}
+$('addRoom').onclick=()=>{ensureCampus();data.rooms.push({building:'',floor:1,number:'',id:'',name:''});renderAll('Room added')};$('addDistance').onclick=()=>{ensureCampus();data.distances.push({from:'',to:'',distance:0});renderAll('Building distance added')};
+function xlsxRows(){ensureCampus();return [['Timetable Input Export'],[],['Building ID','Building name','Floors'],...data.buildings.map(b=>[b.id,b.name,b.floors]),[],['Building','Floor','Room number','Room ID','Display name'],...data.rooms.map(r=>[r.building,r.floor,r.number,roomAutoId(r),r.name]),[],['From building','To building','Distance (m)'],...data.distances.map(d=>[d.from,d.to,d.distance??d.minutes]),[],['Time slot ID','Start','End'],...data.timeslots.map(t=>[t.id,t.start,t.end]),[],['Day','No-class periods','Reason'],...data.blackouts.map(x=>[x.day,x.period,x.reason]),[],['Homeroom ID','Display name','Homeroom location'],...data.homerooms.map(h=>[h.id,h.name,h.location]),[],['Course ID','Course name','Periods / week','Type','Options','Picks','Option'],...data.courses.map(c=>[c.id,c.name,c.periods,c.type,c.count,c.pick,c.options.join(' / ')]),[],['Teacher ID','Name','Courses','CAS homerooms'],...data.teachers.map(t=>[t.id,t.name,t.assignments.join(' / '),(t.casHomerooms||[]).join(' / ')]),[],['Student ID','Name','Homeroom','Course Choices'],...data.students.map(s=>[s.id,s.name,(data.homerooms.find(h=>h.id===s.homeroom)||{}).name||s.homeroom,Object.entries(s.choices).map(([k,v])=>`${k}: ${v.join(' / ')}`).join(' | ')])];}
+renderAll();
+</script><script>
+function roomAutoId(r){let floor=Number(r.floor)||0,ordinal=Number(r.number)||0;return r.building&&floor>0&&ordinal>0?`${r.building}-${floor*100+ordinal}`:''}
+const previousRenderCampus=renderCampus;renderCampus=()=>{ensureCampus();data.rooms.forEach(r=>{let n=Number(r.number);if(n>=100)r.number=n%100;});previousRenderCampus();let header=$('roomBody').closest('table').querySelector('thead tr');header.innerHTML='<th>Building</th><th>Floor</th><th>Room position</th><th>Room ID (auto) </th><th>Display name</th><th></th>';document.querySelectorAll('[data-room][data-key="number"]').forEach(x=>x.placeholder='e.g. room 3')};
+function xlsxRows(){ensureCampus();return [['Timetable Input Export'],[],['Building ID','Building name','Floors'],...data.buildings.map(b=>[b.id,b.name,b.floors]),[],['Building','Floor','Room position','Room ID','Display name'],...data.rooms.map(r=>[r.building,r.floor,r.number,roomAutoId(r),r.name]),[],['From building','To building','Distance (m)'],...data.distances.map(d=>[d.from,d.to,d.distance??d.minutes]),[],['Time slot ID','Start','End'],...data.timeslots.map(t=>[t.id,t.start,t.end]),[],['Day','No-class periods','Reason'],...data.blackouts.map(x=>[x.day,x.period,x.reason]),[],['Homeroom ID','Display name','Homeroom location'],...data.homerooms.map(h=>[h.id,h.name,h.location]),[],['Course ID','Course name','Periods / week','Type','Options','Picks','Option'],...data.courses.map(c=>[c.id,c.name,c.periods,c.type,c.count,c.pick,c.options.join(' / ')]),[],['Teacher ID','Name','Courses','CAS homerooms'],...data.teachers.map(t=>[t.id,t.name,t.assignments.join(' / '),(t.casHomerooms||[]).join(' / ')]),[],['Student ID','Name','Homeroom','Course Choices'],...data.students.map(s=>[s.id,s.name,(data.homerooms.find(h=>h.id===s.homeroom)||{}).name||s.homeroom,Object.entries(s.choices).map(([k,v])=>`${k}: ${v.join(' / ')}`).join(' | ')])];}
+renderAll();
+</script><script>
+function rowsToSheetXml(rows){return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((row,i)=>`<row r="${i+1}">${row.map(v=>`<c t="inlineStr"><is><t>${xlsxEscape(v)}</t></is></c>`).join('')}</row>`).join('')}</sheetData></worksheet>`}
+function exportTables(){ensureCampus();let assignmentRows=[],casRows=[],selectionRows=[],optionRows=[];for(const c of data.courses){c.options.forEach((option,index)=>optionRows.push([c.id,index+1,option]));}for(const t of data.teachers){for(const value of t.assignments||[]){let owner=data.courses.find(c=>(c.type==='required'||c.type==='cas'?(c.name||c.id):usable(c).includes(value)));assignmentRows.push([t.id,owner?.id||'',value]);}for(const hr of t.casHomerooms||[])casRows.push([t.id,hr]);}for(const s of data.students)for(const [courseId,values] of Object.entries(s.choices||{}))for(const value of values)selectionRows.push([s.id,courseId,value]);return [
+ ['Buildings',[['BuildingID','BuildingName','Floors'],...data.buildings.map(b=>[b.id,b.name,b.floors])]],
+ ['Classrooms',[['RoomID','BuildingID','Floor','RoomOrdinal','RoomName'],...data.rooms.map(r=>[roomAutoId(r),r.building,r.floor,r.number,r.name])]],
+ ['BuildingDistances',[['FromBuildingID','ToBuildingID','DistanceMeters'],...data.distances.map(d=>[d.from,d.to,d.distance??d.minutes])]],
+ ['TimeSlots',[['TimeSlotID','StartTime','EndTime'],...data.timeslots.map(t=>[t.id,t.start,t.end])]],
+ ['NoClassTimes',[['Day','TimeSlotID','Reason'],...data.blackouts.map(x=>[x.day,x.period,x.reason])]],
+ ['Homerooms',[['HomeroomID','HomeroomName','RoomID'],...data.homerooms.map(h=>[h.id,h.name,h.location])]],
+ ['Courses',[['CourseID','CourseName','PeriodsPerWeek','CourseType','OptionCount','StudentPickCount'],...data.courses.map(c=>[c.id,c.name,c.periods,c.type,c.count,c.pick])]],
+ ['CourseOptions',[['CourseID','OptionNumber','OptionName'],...optionRows]],
+ ['Teachers',[['TeacherID','TeacherName'],...data.teachers.map(t=>[t.id,t.name])]],
+ ['TeacherAssignments',[['TeacherID','CourseID','CourseOption'],...assignmentRows]],
+ ['TeacherCAS',[['TeacherID','HomeroomID'],...casRows]],
+ ['Students',[['StudentID','StudentName','HomeroomID'],...data.students.map(s=>[s.id,s.name,s.homeroom])]],
+ ['StudentSelections',[['StudentID','CourseID','CourseOption'],...selectionRows]]
+ ]}
+function exportXlsx(){let sheets=exportTables(),types=sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join(''),files=[['[Content_Types].xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${types}</Types>`],['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],['xl/workbook.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s,i)=>`<sheet name="${xlsxEscape(s[0])}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`],['xl/_rels/workbook.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}</Relationships>`],...sheets.map((s,i)=>[`xl/worksheets/sheet${i+1}.xml`,rowsToSheetXml(s[1])])],blob=new Blob([xlsxZip(files)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='timetable-input.xlsx';a.click();URL.revokeObjectURL(a.href);status.textContent='Normalized Excel (.xlsx) exported'}
+$('excelBtn').onclick=exportXlsx;
+</script><script>
+function loadFiveTeacherFortyStudentExample(){if((data.students.length||data.teachers.length||data.courses.length)&&!confirm('Loading the example will replace the current input. Continue?'))return;let hrs=['10-11','10-12','10-13','10-14'],english=['English L1','English L2'],math=['Math L1','Math L2'],science=[['Physics','Biology'],['Physics','Chemistry'],['Biology','Chemistry']],electives=['Elective A','Elective B','Elective C','Elective D'];data={buildings:[{id:'A',name:'Building A',floors:3},{id:'B',name:'Building B',floors:3},{id:'ART',name:'Arts Center',floors:2}],rooms:[{building:'A',floor:1,number:1,name:'10-11 Homeroom'},{building:'A',floor:1,number:2,name:'10-12 Homeroom'},{building:'A',floor:2,number:1,name:'General classroom A-201'},{building:'B',floor:1,number:1,name:'10-13 Homeroom'},{building:'B',floor:1,number:2,name:'10-14 Homeroom'},{building:'B',floor:2,number:1,name:'General classroom B-201'},{building:'ART',floor:1,number:1,name:'Art classroom'}],distances:[{from:'A',to:'B',distance:180},{from:'A',to:'ART',distance:260},{from:'B',to:'ART',distance:220}],timeslots:[{id:'P1',start:'08:30',end:'09:30'},{id:'P2',start:'09:40',end:'10:20'},{id:'P3',start:'10:30',end:'11:10'},{id:'P4',start:'11:20',end:'12:05'},{id:'P5',start:'13:15',end:'14:10'},{id:'P6',start:'14:20',end:'15:00'},{id:'P7',start:'15:10',end:'15:50'}],blackouts:[{day:'Friday',period:'P6',reason:'Fixed no-class'},{day:'Friday',period:'P7',reason:'Fixed no-class'}],homerooms:[{id:'10-11',name:'10-11',location:'A-101'},{id:'10-12',name:'10-12',location:'A-102'},{id:'10-13',name:'10-13',location:'B-101'},{id:'10-14',name:'10-14',location:'B-102'}],courses:[{id:'ENG10',name:'English',periods:4,type:'level',count:2,pick:1,options:english},{id:'MATH10',name:'Mathematics',periods:4,type:'level',count:2,pick:1,options:math},{id:'SCI10',name:'Science',periods:3,type:'choice',count:3,pick:2,options:['Physics','Biology','Chemistry']},{id:'ELEC10',name:'Electives',periods:1,type:'choice',count:4,pick:1,options:electives},{id:'CAS',name:'CAS',periods:2,type:'cas',count:0,pick:0,options:[]}],teachers:[{id:'TCH-01',name:'Teacher 01',assignments:english,casHomerooms:[]},{id:'TCH-02',name:'Teacher 02',assignments:math,casHomerooms:[]},{id:'TCH-03',name:'Teacher 03',assignments:['Physics','Biology'],casHomerooms:[]},{id:'TCH-04',name:'Teacher 04',assignments:['Chemistry','CAS'],casHomerooms:['10-11','10-12']},{id:'TCH-05',name:'Teacher 05',assignments:[...electives,'CAS'],casHomerooms:['10-13','10-14']}],students:Array.from({length:40},(_,i)=>({id:`STU-${String(i+1).padStart(3,'0')}`,name:`Student ${String(i+1).padStart(2,'0')}`,homeroom:hrs[Math.floor(i/10)],choices:{ENG10:[english[i%2]],MATH10:[math[Math.floor(i/2)%2]],SCI10:science[i%3],ELEC10:[electives[i%4]]}}))};data.rooms.forEach(r=>r.id=roomAutoId(r));$('hrCount').value=4;$('hrGrade').value=10;$('hrStart').value=11;renderAll('Loaded editable example: 5 teachers, 40 students')}
+$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;
+</script><script>
+function normalizeCasAndVenue(){ensureCampus();data.teachers.forEach(t=>{if(t.casHomeroom===undefined)t.casHomeroom=(t.casHomerooms||[])[0]||'';delete t.casHomerooms});data.courses.forEach(c=>{c.venue??={enabled:false,building:'',room:''}})}
+function renderCourses(){normalizeCasAndVenue();let bs=buildingNames();courseBody.closest('table').querySelector('thead tr').innerHTML='<th>Course ID</th><th>Course name</th><th>Periods / week</th><th>Type</th><th>Options</th><th>Student picks</th><th>Special venue</th><th></th>';courseBody.innerHTML=data.courses.length?data.courses.map((c,i)=>`<tr><td><input data-course="${i}" data-key="id" value="${esc(c.id)}"></td><td><input data-course="${i}" data-key="name" value="${esc(c.name)}" placeholder="e.g. English / CAS"></td><td><input type="number" min="1" data-course="${i}" data-key="periods" value="${c.periods}"></td><td><select data-course="${i}" data-key="type"><option value="level" ${c.type==='level'?'selected':''}>By level</option><option value="choice" ${c.type==='choice'?'selected':''}>Custom options</option><option value="required" ${c.type==='required'?'selected':''}>Required</option><option value="cas" ${c.type==='cas'?'selected':''}>CAS (homeroom)</option></select></td><td>${(c.type==='required'||c.type==='cas')?'—':`<input type="number" min="1" data-count="${i}" value="${c.count}">`}</td><td>${(c.type==='required'||c.type==='cas')?'—':c.type==='level'?'<span class="choice-note">Default: pick 1</span>':`<input type="number" min="1" max="${c.count}" data-pick="${i}" value="${c.pick}">`}</td><td><label><input type="checkbox" data-venue-enabled="${i}" ${c.venue.enabled?'checked':''}> Special venue</label></td><td><button class="remove" data-remove-course="${i}">Delete</button></td></tr>${c.venue.enabled?`<tr><td colspan="8"><div class="options"><label>Required building<select data-venue-building="${i}">${optionsFor(bs,c.venue.building,'Any building')}</select></label><label>Required room<select data-venue-room="${i}">${optionsFor(data.rooms.filter(r=>!c.venue.building||r.building===c.venue.building).map(r=>roomAutoId(r)),c.venue.room,'Any room')}</select></label></div></td></tr>`:''}${(c.type==='required'||c.type==='cas')?'':`<tr><td colspan="8"><b>${esc(c.name||'this course')}: ${c.type==='level'?'Level names':'Option name'}</b><div class="options">${c.options.map((o,j)=>`<input data-option-course="${i}" data-option="${j}" value="${esc(o)}" placeholder="Option ${j+1} name">`).join('')}</div></td></tr>`}`).join(''):`<tr><td colspan="8"><div class="empty">No courses yet</div></td></tr>`;courseBody.querySelectorAll('[data-course]').forEach(e=>e.onchange=x=>{let c=data.courses[x.target.dataset.course],k=x.target.dataset.key;c[k]=k==='periods'?Number(x.target.value):x.target.value;if(k==='type'&&(c.type==='required'||c.type==='cas')){c.count=0;c.pick=0;c.options=[]}if(k==='type'&&c.type!=='required'&&c.type!=='cas'&&c.count===0){c.count=2;c.pick=1;c.options=['','']}if(c.type==='level')c.pick=1;renderAll('Course settings updated')});courseBody.querySelectorAll('[data-count]').forEach(e=>e.onchange=x=>{resizeOptions(data.courses[x.target.dataset.count],x.target.value);renderAll('Generated the matching number of input fields')});courseBody.querySelectorAll('[data-pick]').forEach(e=>e.onchange=x=>{let c=data.courses[x.target.dataset.pick];c.pick=Math.min(Math.max(1,Number(x.target.value)||1),c.count);renderAll('Student pick count updated')});courseBody.querySelectorAll('[data-option-course]').forEach(e=>e.onchange=x=>{data.courses[x.target.dataset.optionCourse].options[x.target.dataset.option]=x.target.value;renderAll('Options synced')});courseBody.querySelectorAll('[data-venue-enabled]').forEach(e=>e.onchange=x=>{data.courses[x.target.dataset.venueEnabled].venue.enabled=x.target.checked;renderAll('Special venue settings updated')});courseBody.querySelectorAll('[data-venue-building]').forEach(e=>e.onchange=x=>{let v=data.courses[x.target.dataset.venueBuilding].venue;v.building=x.target.value;v.room='';renderAll('Special venue settings updated')});courseBody.querySelectorAll('[data-venue-room]').forEach(e=>e.onchange=x=>{data.courses[x.target.dataset.venueRoom].venue.room=x.target.value});courseBody.querySelectorAll('[data-remove-course]').forEach(b=>b.onclick=()=>{data.courses.splice(Number(b.dataset.removeCourse),1);renderAll('Course deleted')})}
+function renderTeachers(){normalizeCasAndVenue();let opt=assignable(),hasCas=data.courses.some(c=>c.type==='cas'),hrs=data.homerooms;teacherBody.innerHTML=data.teachers.length?data.teachers.map((t,i)=>`<tr><td><input data-teacher="${i}" data-key="id" value="${esc(t.id)}"></td><td><input data-teacher="${i}" data-key="name" value="${esc(t.name)}"></td><td>${opt.length?checkList(opt,t.assignments,`data-teacher-check="${i}"`):'<span class="choice-note">Add courses and options first</span>'}${hasCas?`<b style="display:block;margin-top:8px">CAS homeroom teacher (maximum one)</b><select data-cas-hr="${i}">${optionsFor(hrs.map(h=>h.id),t.casHomeroom,'No homeroom')}</select>`:''}</td><td><button class="remove" data-remove-teacher="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty">No teachers yet</div></td></tr>`;teacherBody.querySelectorAll('[data-teacher]').forEach(e=>e.onchange=x=>data.teachers[x.target.dataset.teacher][x.target.dataset.key]=x.target.value);teacherBody.querySelectorAll('[data-teacher-check]').forEach(e=>e.onchange=x=>{let n=x.target.dataset.teacherCheck;data.teachers[n].assignments=[...teacherBody.querySelectorAll(`[data-teacher-check="${n}"]:checked`)].map(a=>a.value)});teacherBody.querySelectorAll('[data-cas-hr]').forEach(e=>e.onchange=x=>data.teachers[x.target.dataset.casHr].casHomeroom=x.target.value);teacherBody.querySelectorAll('[data-remove-teacher]').forEach(b=>b.onclick=()=>{data.teachers.splice(Number(b.dataset.removeTeacher),1);renderAll('Teacher deleted')})}
+$('hrStart').closest('label').style.display='none';$('buildHr').onclick=()=>{let n=Math.max(0,Number($('hrCount').value)||0),grade=Math.max(1,Number($('hrGrade').value)||10),old=new Map(data.homerooms.map(h=>[h.id,h]));data.homerooms=Array.from({length:n},(_,i)=>{let id=`${grade}-${i+1}`,saved=old.get(id);return saved||{id,name:id,location:''}});renderAll('Homerooms generated. Fill in their locations.')};const previousExample=loadFiveTeacherFortyStudentExample;$('exampleBtn').onclick=()=>{previousExample();let map=new Map(['10-11','10-1','10-12','10-2','10-13','10-3','10-14','10-4']);data.homerooms.forEach(h=>{h.id=map.get(h.id)||h.id;h.name=h.id});data.students.forEach(s=>s.homeroom=map.get(s.homeroom)||s.homeroom);data.teachers.forEach(t=>{t.casHomeroom=(t.casHomerooms||[])[0]?map.get((t.casHomerooms||[])[0]):'';delete t.casHomerooms});data.courses.forEach(c=>c.venue={enabled:false,building:'',room:''});$('hrStart').value=1;renderAll('Loaded editable example: 5 teachers, 40 students')};
+function exportTables(){normalizeCasAndVenue();let assignmentRows=[],casRows=[],selectionRows=[],optionRows=[];for(const c of data.courses)c.options.forEach((option,index)=>optionRows.push([c.id,index+1,option]));for(const t of data.teachers){for(const value of t.assignments||[]){let owner=data.courses.find(c=>(c.type==='required'||c.type==='cas'?(c.name||c.id):usable(c).includes(value)));assignmentRows.push([t.id,owner?.id||'',value]);}if(t.casHomeroom)casRows.push([t.id,t.casHomeroom]);}for(const s of data.students)for(const [courseId,values] of Object.entries(s.choices||{}))for(const value of values)selectionRows.push([s.id,courseId,value]);return [['Buildings',[['BuildingID','BuildingName','Floors'],...data.buildings.map(b=>[b.id,b.name,b.floors])]],['Classrooms',[['RoomID','BuildingID','Floor','RoomOrdinal','RoomName'],...data.rooms.map(r=>[roomAutoId(r),r.building,r.floor,r.number,r.name])]],['BuildingDistances',[['FromBuildingID','ToBuildingID','DistanceMeters'],...data.distances.map(d=>[d.from,d.to,d.distance??d.minutes])]],['TimeSlots',[['TimeSlotID','StartTime','EndTime'],...data.timeslots.map(t=>[t.id,t.start,t.end])]],['NoClassTimes',[['Day','TimeSlotID','Reason'],...data.blackouts.map(x=>[x.day,x.period,x.reason])]],['Homerooms',[['HomeroomID','HomeroomName','RoomID'],...data.homerooms.map(h=>[h.id,h.name,h.location])]],['Courses',[['CourseID','CourseName','PeriodsPerWeek','CourseType','OptionCount','StudentPickCount','RequiredBuildingID','RequiredRoomID'],...data.courses.map(c=>[c.id,c.name,c.periods,c.type,c.count,c.pick,c.venue.enabled?c.venue.building:'',c.venue.enabled?c.venue.room:''])]],['CourseOptions',[['CourseID','OptionNumber','OptionName'],...optionRows]],['Teachers',[['TeacherID','TeacherName'],...data.teachers.map(t=>[t.id,t.name])]],['TeacherAssignments',[['TeacherID','CourseID','CourseOption'],...assignmentRows]],['TeacherCAS',[['TeacherID','HomeroomID'],...casRows]],['Students',[['StudentID','StudentName','HomeroomID'],...data.students.map(s=>[s.id,s.name,s.homeroom])]],['StudentSelections',[['StudentID','CourseID','CourseOption'],...selectionRows]]]}
+normalizeCasAndVenue();renderAll();
+</script><script>
+function normalizeOptionVenues(){ensureCampus();data.courses.forEach(c=>{c.optionVenues??={};delete c.venue})}
+function renderCourses(){normalizeOptionVenues();let bs=buildingNames();courseBody.closest('table').querySelector('thead tr').innerHTML='<th>Course ID</th><th>Course name</th><th>Periods / week</th><th>Type</th><th>Options</th><th>Student picks</th><th></th>';courseBody.innerHTML=data.courses.length?data.courses.map((c,i)=>`<tr><td><input data-course="${i}" data-key="id" value="${esc(c.id)}"></td><td><input data-course="${i}" data-key="name" value="${esc(c.name)}" placeholder="e.g. English / Physical Education"></td><td><input type="number" min="1" data-course="${i}" data-key="periods" value="${c.periods}"></td><td><select data-course="${i}" data-key="type"><option value="level" ${c.type==='level'?'selected':''}>By level</option><option value="choice" ${c.type==='choice'?'selected':''}>Custom options</option><option value="required" ${c.type==='required'?'selected':''}>Required</option><option value="cas" ${c.type==='cas'?'selected':''}>CAS (homeroom)</option></select></td><td>${(c.type==='required'||c.type==='cas')?'—':`<input type="number" min="1" data-count="${i}" value="${c.count}">`}</td><td>${(c.type==='required'||c.type==='cas')?'—':c.type==='level'?'<span class="choice-note">Default: pick 1</span>':`<input type="number" min="1" max="${c.count}" data-pick="${i}" value="${c.pick}">`}</td><td><button class="remove" data-remove-course="${i}">Delete</button></td></tr>${(c.type==='required'||c.type==='cas')?'':`<tr><td colspan="7"><b>${esc(c.name||'this course')}: ${c.type==='level'?'level / option':'Option'}</b><div class="options">${c.options.map((o,j)=>{let v=c.optionVenues[o]||{enabled:false,building:'',room:''};return`<div style="border:1px solid #d9e2ec;border-radius:6px;padding:7px"><input data-option-course="${i}" data-option="${j}" value="${esc(o)}" placeholder="Option ${j+1} name"><label class="choice-note" style="display:block;margin-top:5px"><input type="checkbox" data-option-venue="${i}" data-option-name="${esc(o)}" ${v.enabled?'checked':''}> Special venue</label>${v.enabled?`<select data-option-building="${i}" data-option-name="${esc(o)}" style="margin-top:5px">${optionsFor(bs,v.building,'Any building')}</select><select data-option-room="${i}" data-option-name="${esc(o)}" style="margin-top:5px">${optionsFor(data.rooms.filter(r=>!v.building||r.building===v.building).map(r=>roomAutoId(r)),v.room,'Any room')}</select>`:''}</div>`}).join('')}</div></td></tr>`}`).join(''):`<tr><td colspan="7"><div class="empty">No courses yet</div></td></tr>`;courseBody.querySelectorAll('[data-course]').forEach(e=>e.onchange=x=>{let c=data.courses[x.target.dataset.course],k=x.target.dataset.key;c[k]=k==='periods'?Number(x.target.value):x.target.value;if(k==='type'&&(c.type==='required'||c.type==='cas')){c.count=0;c.pick=0;c.options=[]}if(k==='type'&&c.type!=='required'&&c.type!=='cas'&&c.count===0){c.count=2;c.pick=1;c.options=['','']}if(c.type==='level')c.pick=1;renderAll('Course settings updated')});courseBody.querySelectorAll('[data-count]').forEach(e=>e.onchange=x=>{resizeOptions(data.courses[x.target.dataset.count],x.target.value);renderAll('Generated the matching number of input fields')});courseBody.querySelectorAll('[data-pick]').forEach(e=>e.onchange=x=>{let c=data.courses[x.target.dataset.pick];c.pick=Math.min(Math.max(1,Number(x.target.value)||1),c.count);renderAll('Student pick count updated')});courseBody.querySelectorAll('[data-option-course]').forEach(e=>e.onchange=x=>{let c=data.courses[x.target.dataset.optionCourse],j=Number(x.target.dataset.option),old=c.options[j],next=x.target.value;if(old!==next&&c.optionVenues[old]){c.optionVenues[next]=c.optionVenues[old];delete c.optionVenues[old]}c.options[j]=next;renderAll('Options synced')});courseBody.querySelectorAll('[data-option-venue]').forEach(e=>e.onchange=x=>{let c=data.courses[x.target.dataset.optionVenue],name=x.target.dataset.optionName;c.optionVenues[name]={...(c.optionVenues[name]||{}),enabled:x.target.checked,building:'',room:''};renderAll('Option venue settings updated')});courseBody.querySelectorAll('[data-option-building]').forEach(e=>e.onchange=x=>{let c=data.courses[x.target.dataset.optionBuilding],v=c.optionVenues[x.target.dataset.optionName];v.building=x.target.value;v.room='';renderAll('Option venue settings updated')});courseBody.querySelectorAll('[data-option-room]').forEach(e=>e.onchange=x=>data.courses[x.target.dataset.optionRoom].optionVenues[x.target.dataset.optionName].room=x.target.value);courseBody.querySelectorAll('[data-remove-course]').forEach(b=>b.onclick=()=>{data.courses.splice(Number(b.dataset.removeCourse),1);renderAll('Course deleted')})}
+function exportTables(){normalizeOptionVenues();let assignmentRows=[],casRows=[],selectionRows=[],optionRows=[];for(const c of data.courses)c.options.forEach((option,index)=>{let v=c.optionVenues[option]||{};optionRows.push([c.id,index+1,option,v.enabled?v.building||'':'',v.enabled?v.room||'':''])});for(const t of data.teachers){for(const value of t.assignments||[]){let owner=data.courses.find(c=>(c.type==='required'||c.type==='cas'?(c.name||c.id):usable(c).includes(value)));assignmentRows.push([t.id,owner?.id||'',value]);}if(t.casHomeroom)casRows.push([t.id,t.casHomeroom]);}for(const s of data.students)for(const [courseId,values] of Object.entries(s.choices||{}))for(const value of values)selectionRows.push([s.id,courseId,value]);return [['Buildings',[['BuildingID','BuildingName','Floors'],...data.buildings.map(b=>[b.id,b.name,b.floors])]],['Classrooms',[['RoomID','BuildingID','Floor','RoomOrdinal','RoomName'],...data.rooms.map(r=>[roomAutoId(r),r.building,r.floor,r.number,r.name])]],['BuildingDistances',[['FromBuildingID','ToBuildingID','DistanceMeters'],...data.distances.map(d=>[d.from,d.to,d.distance??d.minutes])]],['TimeSlots',[['TimeSlotID','StartTime','EndTime'],...data.timeslots.map(t=>[t.id,t.start,t.end])]],['NoClassTimes',[['Day','TimeSlotID','Reason'],...data.blackouts.map(x=>[x.day,x.period,x.reason])]],['Homerooms',[['HomeroomID','HomeroomName','RoomID'],...data.homerooms.map(h=>[h.id,h.name,h.location])]],['Courses',[['CourseID','CourseName','PeriodsPerWeek','CourseType','OptionCount','StudentPickCount'],...data.courses.map(c=>[c.id,c.name,c.periods,c.type,c.count,c.pick])]],['CourseOptions',[['CourseID','OptionNumber','OptionName','RequiredBuildingID','RequiredRoomID'],...optionRows]],['Teachers',[['TeacherID','TeacherName'],...data.teachers.map(t=>[t.id,t.name])]],['TeacherAssignments',[['TeacherID','CourseID','CourseOption'],...assignmentRows]],['TeacherCAS',[['TeacherID','HomeroomID'],...casRows]],['Students',[['StudentID','StudentName','HomeroomID'],...data.students.map(s=>[s.id,s.name,s.homeroom])]],['StudentSelections',[['StudentID','CourseID','CourseOption'],...selectionRows]]]}
+normalizeOptionVenues();renderAll();
+</script><script>
+function assignable(){return data.courses.flatMap(c=>c.type==='required'?[c.name||c.id]:c.type==='cas'?[]:usable(c)).filter(Boolean)}
+function loadFiveTeacherFortyStudentExample(){if((data.students.length||data.teachers.length||data.courses.length)&&!confirm('Loading the example will replace the current input. Continue?'))return;let hrs=['10-1','10-2','10-3','10-4'],english=['English L1','English L2'],math=['Math L1','Math L2'],science=[['Physics','Biology'],['Physics','Chemistry'],['Biology','Chemistry']],pe=['Soccer','Basketball','Fitness Training'],electives=['Elective A: Visual Arts','Elective B: Creative Writing','Elective C: Robotics','Elective D: Choir'];data={buildings:[{id:'A',name:'Building A',floors:3},{id:'B',name:'Building B',floors:3},{id:'ART',name:'Arts Center',floors:2},{id:'SPT',name:'Sports Center',floors:1}],rooms:[{building:'A',floor:1,number:1,name:'10-1 Homeroom'},{building:'A',floor:1,number:2,name:'10-2 Homeroom'},{building:'A',floor:2,number:1,name:'General classroom'},{building:'B',floor:1,number:1,name:'10-3 Homeroom'},{building:'B',floor:1,number:2,name:'10-4 Homeroom'},{building:'B',floor:2,number:1,name:'General classroom'},{building:'ART',floor:1,number:1,name:'Art classroom'},{building:'SPT',floor:1,number:1,name:'Soccer Field'},{building:'SPT',floor:1,number:2,name:'Basketball Court'}],distances:[{from:'A',to:'B',distance:180},{from:'A',to:'ART',distance:260},{from:'A',to:'SPT',distance:220},{from:'B',to:'ART',distance:220},{from:'B',to:'SPT',distance:150},{from:'ART',to:'SPT',distance:280}],timeslots:[{id:'P1',start:'08:30',end:'09:30'},{id:'P2',start:'09:40',end:'10:20'},{id:'P3',start:'10:30',end:'11:10'},{id:'P4',start:'11:20',end:'12:05'},{id:'P5',start:'13:15',end:'14:10'},{id:'P6',start:'14:20',end:'15:00'},{id:'P7',start:'15:10',end:'15:50'}],blackouts:[{day:'Friday',period:'P6',reason:'Fixed no-class'},{day:'Friday',period:'P7',reason:'Fixed no-class'}],homerooms:[{id:'10-1',name:'10-1',location:'A-101'},{id:'10-2',name:'10-2',location:'A-102'},{id:'10-3',name:'10-3',location:'B-101'},{id:'10-4',name:'10-4',location:'B-102'}],courses:[{id:'ENG10',name:'English',periods:4,type:'level',count:2,pick:1,options:english,optionVenues:{}},{id:'MATH10',name:'Mathematics',periods:4,type:'level',count:2,pick:1,options:math,optionVenues:{}},{id:'SCI10',name:'Science',periods:3,type:'choice',count:3,pick:2,options:['Physics','Biology','Chemistry'],optionVenues:{}},{id:'PE10',name:'Physical Education',periods:2,type:'choice',count:3,pick:1,options:pe,optionVenues:{'Soccer':{enabled:true,building:'SPT',room:'SPT-101'},'Basketball':{enabled:true,building:'SPT',room:'SPT-102'},'Fitness Training':{enabled:true,building:'B',room:'B-201'}}},{id:'ELEC10',name:'Electives',periods:1,type:'choice',count:4,pick:1,options:electives,optionVenues:{'Elective A: Visual Arts':{enabled:true,building:'ART',room:'ART-101'},'Elective B: Creative Writing':{enabled:true,building:'B',room:'B-201'},'Elective C: Robotics':{enabled:true,building:'A',room:'A-201'}}},{id:'CAS',name:'CAS',periods:2,type:'cas',count:0,pick:0,options:[],optionVenues:{}}],teachers:[{id:'TCH-01',name:'Teacher 01',assignments:english,casHomeroom:'10-1'},{id:'TCH-02',name:'Teacher 02',assignments:math,casHomeroom:'10-2'},{id:'TCH-03',name:'Teacher 03',assignments:['Physics','Biology'],casHomeroom:'10-3'},{id:'TCH-04',name:'Teacher 04',assignments:['Chemistry',...pe],casHomeroom:'10-4'},{id:'TCH-05',name:'Teacher 05',assignments:electives,casHomeroom:''}],students:Array.from({length:40},(_,i)=>({id:`STU-${String(i+1).padStart(3,'0')}`,name:`Student ${String(i+1).padStart(2,'0')}`,homeroom:hrs[Math.floor(i/10)],choices:{ENG10:[english[i%2]],MATH10:[math[Math.floor(i/2)%2]],SCI10:science[i%3],PE10:[pe[i%3]],ELEC10:[electives[i%4]]}}))};data.rooms.forEach(r=>r.id=roomAutoId(r));$('hrCount').value=4;$('hrGrade').value=10;normalizeOptionVenues();renderAll('Loaded full editable example: 5 teachers, 40 students')}
+$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;
+renderAll();
+</script><script>
+function assignmentDefinitions(){return data.courses.flatMap(c=>c.type==='required'?[{courseId:c.id,option:'',label:c.id}]:c.type==='cas'?[]:usable(c).map(option=>({courseId:c.id,option,label:`${c.id} · ${option}`})))}
+function assignable(){return assignmentDefinitions().map(x=>x.label)}
+function normalizeTeacherAssignments(){let defs=assignmentDefinitions();data.teachers.forEach(t=>t.assignments=(t.assignments||[]).map(value=>{if(defs.some(d=>d.label===value))return value;let matches=defs.filter(d=>d.option===value||d.courseId===value);return matches.length===1?matches[0].label:value}))}
+const priorRenderTeachers=renderTeachers;renderTeachers=()=>{normalizeTeacherAssignments();priorRenderTeachers()};
+function exportTables(){normalizeOptionVenues();normalizeTeacherAssignments();let defs=assignmentDefinitions(),assignmentRows=[],casRows=[],selectionRows=[],optionRows=[];for(const c of data.courses)c.options.forEach((option,index)=>{let v=c.optionVenues[option]||{};optionRows.push([c.id,index+1,option,v.enabled?v.building||'':'',v.enabled?v.room||'':''])});for(const t of data.teachers){for(const label of t.assignments||[]){let d=defs.find(x=>x.label===label);assignmentRows.push([t.id,d?.courseId||'',d?.option||label]);}if(t.casHomeroom)casRows.push([t.id,t.casHomeroom]);}for(const s of data.students)for(const [courseId,values] of Object.entries(s.choices||{}))for(const value of values)selectionRows.push([s.id,courseId,value]);return [['Buildings',[['BuildingID','BuildingName','Floors'],...data.buildings.map(b=>[b.id,b.name,b.floors])]],['Classrooms',[['RoomID','BuildingID','Floor','RoomOrdinal','RoomName'],...data.rooms.map(r=>[roomAutoId(r),r.building,r.floor,r.number,r.name])]],['BuildingDistances',[['FromBuildingID','ToBuildingID','DistanceMeters'],...data.distances.map(d=>[d.from,d.to,d.distance??d.minutes])]],['TimeSlots',[['TimeSlotID','StartTime','EndTime'],...data.timeslots.map(t=>[t.id,t.start,t.end])]],['NoClassTimes',[['Day','TimeSlotID','Reason'],...data.blackouts.map(x=>[x.day,x.period,x.reason])]],['Homerooms',[['HomeroomID','HomeroomName','RoomID'],...data.homerooms.map(h=>[h.id,h.name,h.location])]],['Courses',[['CourseID','CourseName','PeriodsPerWeek','CourseType','OptionCount','StudentPickCount'],...data.courses.map(c=>[c.id,c.name,c.periods,c.type,c.count,c.pick])]],['CourseOptions',[['CourseID','OptionNumber','OptionName','RequiredBuildingID','RequiredRoomID'],...optionRows]],['Teachers',[['TeacherID','TeacherName'],...data.teachers.map(t=>[t.id,t.name])]],['TeacherAssignments',[['TeacherID','CourseID','CourseOption'],...assignmentRows]],['TeacherCAS',[['TeacherID','HomeroomID'],...casRows]],['Students',[['StudentID','StudentName','HomeroomID'],...data.students.map(s=>[s.id,s.name,s.homeroom])]],['StudentSelections',[['StudentID','CourseID','CourseOption'],...selectionRows]]]}
+const previousExampleWithLabels=loadFiveTeacherFortyStudentExample;loadFiveTeacherFortyStudentExample=()=>{previousExampleWithLabels();normalizeTeacherAssignments();renderAll()};$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;renderAll();
+</script><script>
+const priorExampleWithCurrentRules=loadFiveTeacherFortyStudentExample;loadFiveTeacherFortyStudentExample=()=>{priorExampleWithCurrentRules();let idMap={ENG10:'ENG',MATH10:'MATH',SCI10:'SCI',PE10:'PE',ELEC10:'ELEC'},byOld=Object.fromEntries(data.courses.map(c=>[c.id,c]));data.courses.forEach(c=>c.id=idMap[c.id]||c.id);let eng=data.courses.find(c=>c.id==='ENG'),math=data.courses.find(c=>c.id==='MATH');if(eng)eng.options=['S','H'];if(math)math.options=['A','B'];data.students.forEach((s,i)=>{let old=s.choices||{};s.choices={ENG:[i%2?'H':'S'],MATH:[Math.floor(i/2)%2?'B':'A'],SCI:old.SCI10||['Physics','Biology'],PE:old.PE10||['Soccer'],ELEC:old.ELEC10||['Elective A: Visual Arts']}});data.teachers.forEach(t=>{if(t.id==='TCH-01')t.assignments=['ENG · S','ENG · H'];if(t.id==='TCH-02')t.assignments=['MATH · A','MATH · B'];if(t.id==='TCH-03')t.assignments=['SCI · Physics','SCI · Biology'];if(t.id==='TCH-04')t.assignments=['SCI · Chemistry','PE · Soccer','PE · Basketball','PE · Fitness Training'];if(t.id==='TCH-05')t.assignments=['ELEC · Elective A: Visual Arts','ELEC · Elective B: Creative Writing','ELEC · Elective C: Robotics','ELEC · Elective D: Choir']});normalizeTeacherAssignments();renderAll('Loaded latest rules example: 5 teachers, 40 students')};$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;
+</script><script>
+/* Teacher unavailable-time input and normalized export. */
+const AVAILABILITY_DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+function unavailableKey(day,slot){return `${day}|${slot}`}
+function normalizeTeacherAvailability(){
+  (data.teachers||[]).forEach(t=>{if(!Array.isArray(t.unavailable))t.unavailable=[];});
+}
+function renderTeacherAvailability(){
+  normalizeTeacherAvailability();
+  let studentStep=studentBody.closest('section').querySelector('.step');
+  if(studentStep)studentStep.textContent='5';
+  let anchor=teacherBody.closest('section'),section=document.getElementById('teacherAvailabilitySection');
+  if(!section){anchor.insertAdjacentHTML('afterend','<section class="card" id="teacherAvailabilitySection"></section>');section=document.getElementById('teacherAvailabilitySection');}
+  let slots=data.timeslots||[],blocked=new Set((data.blackouts||[]).map(x=>unavailableKey(x.day,x.period)));
+  let usable=(day)=>slots.filter(slot=>!blocked.has(unavailableKey(day,slot.id)));
+  let rows=data.teachers.flatMap((teacher,teacherIndex)=>(teacher.unavailable||[]).map((key,unavailableIndex)=>({key,unavailableIndex})).filter(item=>!blocked.has(item.key)).map(({key,unavailableIndex})=>{let [day,slot]=key.split('|');return{teacherIndex,unavailableIndex,day,slot}}));
+  section.innerHTML=`<h2><span class="step">4</span>Teacher unavailable times</h2><p class="hint">Add each time a teacher cannot teach. Unlisted times are available; school-wide no-class periods do not need to be repeated here.</p><button class="add" id="addTeacherUnavailable">+ Add unavailable time</button><div class="scroll" style="margin-top:12px"><table><thead><tr><th>Teacher</th><th>Day</th><th>Time slot</th><th></th></tr></thead><tbody id="teacherAvailabilityBody">${rows.length?rows.map((row,rowIndex)=>`<tr><td><select data-av-row="${rowIndex}" data-av-field="teacher"><option value="">Select</option>${data.teachers.map((teacher,index)=>`<option value="${index}" ${index===row.teacherIndex?'selected':''}>${esc(teacher.name||teacher.id)} (${esc(teacher.id)}) </option>`).join('')}</select></td><td><select data-av-row="${rowIndex}" data-av-field="day">${AVAILABILITY_DAYS.map(day=>`<option value="${day}" ${day===row.day?'selected':''}>${day}</option>`).join('')}</select></td><td><select data-av-row="${rowIndex}" data-av-field="slot">${usable(row.day).map(slot=>`<option value="${esc(slot.id)}" ${slot.id===row.slot?'selected':''}>${esc(slot.id)} (${esc(slot.start)}–${esc(slot.end)}) </option>`).join('')}</select></td><td><button class="remove" data-remove-av="${rowIndex}">Delete</button></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty">No teacher unavailable times yet</div></td></tr>'}</tbody></table></div>`;
+  function changeRow(rowIndex,field,value){
+    let row=rows[rowIndex],oldTeacher=data.teachers[row.teacherIndex],nextTeacherIndex=field==='teacher'?Number(value):row.teacherIndex,nextDay=field==='day'?value:row.day,nextSlot=field==='slot'?value:row.slot;
+    if(field==='day'&&!usable(nextDay).some(slot=>slot.id===nextSlot))nextSlot=usable(nextDay)[0]?.id||'';
+    let nextKey=unavailableKey(nextDay,nextSlot),nextTeacher=data.teachers[nextTeacherIndex];
+    if(!nextTeacher||!nextSlot){renderTeacherAvailability();return}
+    if((nextTeacher.unavailable||[]).includes(nextKey)&&!(nextTeacherIndex===row.teacherIndex&&nextKey===unavailableKey(row.day,row.slot))){alert('This teacher is already unavailable at that time.');renderTeacherAvailability();return}
+    oldTeacher.unavailable.splice(row.unavailableIndex,1);nextTeacher.unavailable.push(nextKey);renderTeacherAvailability();status.textContent='Teacher unavailable time updated';
+  }
+  section.querySelectorAll('[data-av-row]').forEach(input=>input.onchange=event=>changeRow(Number(event.target.dataset.avRow),event.target.dataset.avField,event.target.value));
+  section.querySelectorAll('[data-remove-av]').forEach(button=>button.onclick=()=>{let row=rows[Number(button.dataset.removeAv)],teacher=data.teachers[row.teacherIndex];teacher.unavailable.splice(row.unavailableIndex,1);renderTeacherAvailability();status.textContent='Teacher unavailable time deleted'});
+  $('addTeacherUnavailable').onclick=()=>{let teacher=data.teachers[0],day=AVAILABILITY_DAYS.find(candidate=>usable(candidate).length),slot=day&&usable(day)[0];if(!teacher||!slot){alert('Add at least one teacher and one available time slot first.');return}let key=unavailableKey(day,slot.id);if(!teacher.unavailable.includes(key))teacher.unavailable.push(key);else{let alternative=AVAILABILITY_DAYS.flatMap(candidate=>usable(candidate).map(item=>unavailableKey(candidate,item.id))).find(item=>!teacher.unavailable.includes(item));if(!alternative){alert('No more time slots available.');return}teacher.unavailable.push(alternative)}renderTeacherAvailability();status.textContent='Teacher unavailable time added'};
+}
+const renderAllBeforeTeacherAvailability=renderAll;
+renderAll=(message)=>{renderAllBeforeTeacherAvailability(message);renderTeacherAvailability()};
+
+function exportTables(){
+  normalizeOptionVenues();normalizeTeacherAssignments();normalizeTeacherAvailability();
+  let defs=assignmentDefinitions(),assignmentRows=[],casRows=[],selectionRows=[],optionRows=[],availabilityRows=[];
+  for(const c of data.courses)c.options.forEach((option,index)=>{let v=c.optionVenues[option]||{};optionRows.push([c.id,index+1,option,v.enabled?v.building||'':'',v.enabled?v.room||'':''])});
+  for(const teacher of data.teachers){
+    for(const label of teacher.assignments||[]){let d=defs.find(x=>x.label===label);assignmentRows.push([teacher.id,d?.courseId||'',d?.option||label]);}
+    if(teacher.casHomeroom)casRows.push([teacher.id,teacher.casHomeroom]);
+    for(const day of AVAILABILITY_DAYS)for(const slot of data.timeslots||[])availabilityRows.push([teacher.id,day,slot.id,teacher.unavailable.includes(unavailableKey(day,slot.id))?0:1]);
+  }
+  for(const student of data.students)for(const [courseId,values] of Object.entries(student.choices||{}))for(const value of values)selectionRows.push([student.id,courseId,value]);
+  return [
+    ['Buildings',[['BuildingID','BuildingName','Floors'],...data.buildings.map(b=>[b.id,b.name,b.floors])]],
+    ['Classrooms',[['RoomID','BuildingID','Floor','RoomOrdinal','RoomName'],...data.rooms.map(r=>[roomAutoId(r),r.building,r.floor,r.number,r.name])]],
+    ['BuildingDistances',[['FromBuildingID','ToBuildingID','DistanceMeters'],...data.distances.map(d=>[d.from,d.to,d.distance??d.minutes])]],
+    ['TimeSlots',[['TimeSlotID','StartTime','EndTime'],...data.timeslots.map(t=>[t.id,t.start,t.end])]],
+    ['NoClassTimes',[['Day','TimeSlotID','Reason'],...data.blackouts.map(x=>[x.day,x.period,x.reason])]],
+    ['Homerooms',[['HomeroomID','HomeroomName','RoomID'],...data.homerooms.map(h=>[h.id,h.name,h.location])]],
+    ['Courses',[['CourseID','CourseName','PeriodsPerWeek','CourseType','OptionCount','StudentPickCount'],...data.courses.map(c=>[c.id,c.name,c.periods,c.type,c.count,c.pick])]],
+    ['CourseOptions',[['CourseID','OptionNumber','OptionName','RequiredBuildingID','RequiredRoomID'],...optionRows]],
+    ['Teachers',[['TeacherID','TeacherName'],...data.teachers.map(t=>[t.id,t.name])]],
+    ['TeacherAssignments',[['TeacherID','CourseID','CourseOption'],...assignmentRows]],
+    ['TeacherAvailability',[['TeacherID','Day','TimeSlotID','Available'],...availabilityRows]],
+    ['TeacherCAS',[['TeacherID','HomeroomID'],...casRows]],
+    ['Students',[['StudentID','StudentName','HomeroomID'],...data.students.map(s=>[s.id,s.name,s.homeroom])]],
+    ['StudentSelections',[['StudentID','CourseID','CourseOption'],...selectionRows]]
+  ];
+}
+const exampleBeforeTeacherAvailability=loadFiveTeacherFortyStudentExample;
+loadFiveTeacherFortyStudentExample=()=>{exampleBeforeTeacherAvailability();let unavailable={
+  'TCH-01':['Monday|P1','Wednesday|P7'],
+  'TCH-02':['Tuesday|P5'],
+  'TCH-03':['Thursday|P1','Thursday|P2'],
+  'TCH-04':['Monday|P6'],
+  'TCH-05':['Wednesday|P1','Friday|P5']
+};data.teachers.forEach(t=>t.unavailable=unavailable[t.id]||[]);renderAll('Loaded latest example with teacher unavailable times')};
+$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;
+renderAll();
+</script><script>
+/* A/B blocks and course scheduling rules. */
+const SCHEDULE_BLOCKS=['A','B'];
+function normalizeScheduleRules(){
+  (data.courses||[]).forEach(course=>{if(!SCHEDULE_BLOCKS.includes(course.block))course.block='A';course.allGradeSameTime=!!course.allGradeSameTime;course.requireConsecutive=!!course.requireConsecutive;});
+  (data.students||[]).forEach(student=>{if(!SCHEDULE_BLOCKS.includes(student.block))student.block='A';});
+}
+const priorAssignmentDefinitionsForBlocks=assignmentDefinitions;
+assignmentDefinitions=()=>data.courses.flatMap(course=>course.type==='required'?[{courseId:course.id,option:'',label:course.name||course.id}]:course.type==='cas'?[]:usable(course).map(option=>({courseId:course.id,option,label:`${course.name||course.id} · ${option}`})));
+normalizeTeacherAssignments=()=>{let defs=assignmentDefinitions();data.teachers.forEach(teacher=>teacher.assignments=(teacher.assignments||[]).map(value=>{if(defs.some(item=>item.label===value))return value;let match=defs.find(item=>value===item.option||value===item.courseId||value===`${item.courseId} · ${item.option}`||value===`${item.label}`);return match?match.label:value;}));};
+
+const renderCoursesBeforeBlocks=renderCourses;
+renderCourses=()=>{
+  normalizeScheduleRules();renderCoursesBeforeBlocks();
+  let header=courseBody.closest('table').querySelector('thead tr');
+  header.innerHTML='<th>Course ID</th><th>Course name</th><th>Periods / week</th><th>Type</th><th>Options</th><th>Student picks</th><th>Block</th><th>Rules</th><th></th>';
+  [...courseBody.querySelectorAll('tr')].forEach(row=>{
+    let courseInput=row.querySelector('[data-course][data-key="id"]');if(!courseInput)return;
+    let index=Number(courseInput.dataset.course),course=data.courses[index],deleteCell=row.lastElementChild;
+    let blockCell=document.createElement('td');blockCell.innerHTML=`<select data-course-block="${index}">${SCHEDULE_BLOCKS.map(block=>`<option value="${block}" ${course.block===block?'selected':''}>${block} Block</option>`).join('')}</select>`;
+    let rulesCell=document.createElement('td');rulesCell.innerHTML=`<label class="choice-note" style="display:block"><input type="checkbox" data-course-same-time="${index}" ${course.allGradeSameTime?'checked':''}> All-grade same time</label><label class="choice-note" style="display:block;margin-top:6px"><input type="checkbox" data-course-consecutive="${index}" ${course.requireConsecutive?'checked':''}> Consecutive</label>`;
+    row.insertBefore(blockCell,deleteCell);row.insertBefore(rulesCell,deleteCell);
+  });
+  courseBody.querySelectorAll('[data-course-block]').forEach(input=>input.onchange=event=>{data.courses[Number(event.target.dataset.courseBlock)].block=event.target.value;renderAll('Course block updated')});
+  courseBody.querySelectorAll('[data-course-same-time]').forEach(input=>input.onchange=event=>{data.courses[Number(event.target.dataset.courseSameTime)].allGradeSameTime=event.target.checked;status.textContent='All-grade same-time rule updated'});
+  courseBody.querySelectorAll('[data-course-consecutive]').forEach(input=>input.onchange=event=>{data.courses[Number(event.target.dataset.courseConsecutive)].requireConsecutive=event.target.checked;status.textContent='Consecutive rule updated'});
+  courseBody.querySelectorAll('[data-option-course]').forEach(input=>{let course=data.courses[Number(input.dataset.optionCourse)];if(course?.type==='level')input.placeholder='e.g. S / S+ / H / H+';});
+};
+
+function setBlockChoiceState(cell,course,chosen){cell.querySelector('.choice-state').className=chosen.length===course.pick?'choice-state ok':'choice-state error';cell.querySelector('.choice-state').textContent=chosen.length===course.pick?`Selected ${course.pick}`:`Select ${course.pick}`;}
+renderStudents=()=>{
+  normalizeScheduleRules();let courses=data.courses.filter(course=>course.type==='level'||course.type==='choice');
+  studentHead.innerHTML=`<th class="student-id-col">Student ID</th><th class="student-name-col">Name</th><th>Block</th><th>Homeroom</th>${courses.map(course=>`<th>${esc(course.name||course.id)}<br><span class="choice-note">${course.block} Block · pick  ${course.pick} </span></th>`).join('')}<th></th>`;
+  let studentRows=data.students.map((student,index)=>{
+    let blockOptions=SCHEDULE_BLOCKS.map(block=>'<option value="'+block+'" '+(student.block===block?'selected':'')+'>'+block+' Block</option>').join('');
+    let roomOptions=data.homerooms.map(room=>'<option value="'+esc(room.id)+'" '+(room.id===student.homeroom?'selected':'')+'>'+esc(room.name||room.id)+'</option>').join('');
+    let courseCells=courses.map(course=>{if(course.block!==student.block)return '<td><span class="choice-note">Other block</span></td>';let chosen=student.choices[course.id]||[],ok=chosen.length===course.pick,checks=checkList(usable(course),chosen,'data-student-choice="'+index+'" data-course-id="'+esc(course.id)+'"');return '<td data-choice-cell="'+index+'" data-choice-course="'+esc(course.id)+'">'+checks+'<span class="choice-state '+(ok?'ok':'error')+'">'+(ok?'Selected '+course.pick+' ':'Select '+course.pick+' ')+'</span></td>';}).join('');
+    return '<tr><td class="student-id-col"><input data-student="'+index+'" data-key="id" value="'+esc(student.id)+'"></td><td class="student-name-col"><input data-student="'+index+'" data-key="name" value="'+esc(student.name)+'"></td><td><select data-student="'+index+'" data-key="block">'+blockOptions+'</select></td><td><select data-student="'+index+'" data-key="homeroom"><option value="">Select</option>'+roomOptions+'</select></td>'+courseCells+'<td><button class="remove" data-remove-student="'+index+'">Delete</button></td></tr>';
+  });
+  studentBody.innerHTML=studentRows.length?studentRows.join(''):'<tr><td colspan="99"><div class="empty">No students yet</div></td></tr>';
+  studentBody.querySelectorAll('[data-student]').forEach(input=>input.onchange=event=>{let student=data.students[Number(event.target.dataset.student)],key=event.target.dataset.key;student[key]=event.target.value;renderAll('Student information updated')});
+  studentBody.querySelectorAll('[data-student-choice]').forEach(input=>input.onchange=event=>{let index=Number(event.target.dataset.studentChoice),courseId=event.target.dataset.courseId,course=data.courses.find(item=>item.id===courseId),chosen=[...studentBody.querySelectorAll(`[data-student-choice="${index}"][data-course-id="${courseId}"]:checked`)].map(item=>item.value);if(chosen.length>course.pick){event.target.checked=false;chosen=chosen.filter(item=>item!==event.target.value);alert(`this courserequires exactly ${course.pick} . `)}data.students[index].choices[courseId]=chosen;setBlockChoiceState(event.target.closest('td'),course,chosen)});
+  studentBody.querySelectorAll('[data-remove-student]').forEach(button=>button.onclick=()=>{data.students.splice(Number(button.dataset.removeStudent),1);renderAll('Student deleted')});
+  let table=studentBody.closest('table');table.classList.add('student-table');
+};
+
+function exportTables(){
+  normalizeOptionVenues();normalizeScheduleRules();normalizeTeacherAssignments();normalizeTeacherAvailability();
+  let defs=assignmentDefinitions(),assignmentRows=[],casRows=[],selectionRows=[],optionRows=[],availabilityRows=[];
+  for(const course of data.courses)course.options.forEach((option,index)=>{let venue=course.optionVenues[option]||{};optionRows.push([course.id,index+1,option,venue.enabled?venue.building||'':'',venue.enabled?venue.room||'':''])});
+  for(const teacher of data.teachers){for(const label of teacher.assignments||[]){let definition=defs.find(item=>item.label===label);assignmentRows.push([teacher.id,definition?.courseId||'',definition?.option||label]);}if(teacher.casHomeroom)casRows.push([teacher.id,teacher.casHomeroom]);for(const day of AVAILABILITY_DAYS)for(const slot of data.timeslots||[])availabilityRows.push([teacher.id,day,slot.id,teacher.unavailable.includes(unavailableKey(day,slot.id))?0:1]);}
+  for(const student of data.students)for(const [courseId,values] of Object.entries(student.choices||{}))for(const value of values)selectionRows.push([student.id,courseId,value]);
+  return [['Buildings',[['BuildingID','BuildingName','Floors'],...data.buildings.map(building=>[building.id,building.name,building.floors])]],['Classrooms',[['RoomID','BuildingID','Floor','RoomOrdinal','RoomName'],...data.rooms.map(room=>[roomAutoId(room),room.building,room.floor,room.number,room.name])]],['BuildingDistances',[['FromBuildingID','ToBuildingID','DistanceMeters'],...data.distances.map(distance=>[distance.from,distance.to,distance.distance??distance.minutes])]],['TimeSlots',[['TimeSlotID','StartTime','EndTime'],...data.timeslots.map(slot=>[slot.id,slot.start,slot.end])]],['NoClassTimes',[['Day','TimeSlotID','Reason'],...data.blackouts.map(item=>[item.day,item.period,item.reason])]],['Homerooms',[['HomeroomID','HomeroomName','RoomID'],...data.homerooms.map(room=>[room.id,room.name,room.location])]],['Courses',[['CourseID','CourseName','Block','PeriodsPerWeek','CourseType','OptionCount','StudentPickCount','AllGradeSameTime','RequireConsecutive'],...data.courses.map(course=>[course.id,course.name,course.block,course.periods,course.type,course.count,course.pick,course.allGradeSameTime?1:0,course.requireConsecutive?1:0])]],['CourseOptions',[['CourseID','OptionNumber','OptionName','RequiredBuildingID','RequiredRoomID'],...optionRows]],['Teachers',[['TeacherID','TeacherName'],...data.teachers.map(teacher=>[teacher.id,teacher.name])]],['TeacherAssignments',[['TeacherID','CourseID','CourseOption'],...assignmentRows]],['TeacherAvailability',[['TeacherID','Day','TimeSlotID','Available'],...availabilityRows]],['TeacherCAS',[['TeacherID','HomeroomID'],...casRows]],['Students',[['StudentID','StudentName','Block','HomeroomID'],...data.students.map(student=>[student.id,student.name,student.block,student.homeroom])]],['StudentSelections',[['StudentID','CourseID','CourseOption'],...selectionRows]]];
+}
+let blockStyle=document.createElement('style');blockStyle.textContent='.student-table{min-width:1180px}.student-table .student-id-col{min-width:150px}.student-table .student-name-col{min-width:150px}.student-table .student-id-col input,.student-table .student-name-col input{min-width:140px}.student-table th:nth-child(1),.student-table th:nth-child(2){white-space:nowrap}';document.head.appendChild(blockStyle);
+const exampleBeforeBlocks=loadFiveTeacherFortyStudentExample;
+loadFiveTeacherFortyStudentExample=()=>{exampleBeforeBlocks();normalizeScheduleRules();let courses=Object.fromEntries(data.courses.map(course=>[course.id,course]));if(courses.ENG){courses.ENG.block='A';courses.ENG.options=['S','S+','H','H+'];courses.ENG.count=4;}if(courses.MATH)courses.MATH.block='A';if(courses.SCI)courses.SCI.block='A';if(courses.PE)courses.PE.block='B';if(courses.ELEC)courses.ELEC.block='B';if(courses.CAS){courses.CAS.block='B';courses.CAS.requireConsecutive=true;courses.CAS.allGradeSameTime=true;}data.students.forEach((student,index)=>{student.block=index<20?'A':'B';student.choices=student.block==='A'?{ENG:[['S','S+','H','H+'][index%4]],MATH:[index%2?'B':'A'],SCI:index%3===0?['Physics','Biology']:index%3===1?['Physics','Chemistry']:['Biology','Chemistry']}:{PE:[['Soccer','Basketball','Fitness Training'][index%3]],ELEC:[['Elective A: Visual Arts','Elective B: Creative Writing','Elective C: Robotics','Elective D: Choir'][index%4]]};});normalizeTeacherAssignments();renderAll('Loaded A/B block example: A and B use separate schedules')};$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;
+renderAll();
+</script><script>
+/* Correct A/B interpretation: common courses, separate sections and schedules. */
+normalizeScheduleRules=()=>{
+  (data.courses||[]).forEach(course=>{if(!Array.isArray(course.blocks)||!course.blocks.length)course.blocks=['A','B'];course.blocks=course.blocks.filter(block=>SCHEDULE_BLOCKS.includes(block));course.allGradeSameTime=!!course.allGradeSameTime;course.requireConsecutive=!!course.requireConsecutive;});
+  (data.students||[]).forEach(student=>{if(!SCHEDULE_BLOCKS.includes(student.block))student.block='A';});
+};
+assignmentDefinitions=()=>data.courses.flatMap(course=>course.type==='cas'?[]:SCHEDULE_BLOCKS.filter(block=>(course.blocks||[]).includes(block)).flatMap(block=>course.type==='required'?[{courseId:course.id,option:'',block,label:`${course.name||course.id} · ${block} Block`}]:usable(course).map(option=>({courseId:course.id,option,block,label:`${course.name||course.id} · ${option} · ${block} Block`}))));
+normalizeTeacherAssignments=()=>{let defs=assignmentDefinitions();data.teachers.forEach(teacher=>teacher.assignments=(teacher.assignments||[]).map(value=>{if(defs.some(item=>item.label===value))return value;let matching=defs.filter(item=>value===item.option||value===item.courseId||value===`${item.courseId} · ${item.option}`||value===`${item.name||''} · ${item.option}`);return matching.length===1?matching[0].label:value;}));};
+
+const renderCoursesBeforeBothBlocks=renderCourses;
+renderCourses=()=>{
+  normalizeScheduleRules();renderCoursesBeforeBothBlocks();
+  courseBody.querySelectorAll('[data-course-block]').forEach(select=>{let course=data.courses[Number(select.dataset.courseBlock)],cell=select.closest('td');cell.innerHTML=`<div class="checkgrid">${SCHEDULE_BLOCKS.map(block=>`<label><input type="checkbox" data-course-offer-block="${select.dataset.courseBlock}" value="${block}" ${(course.blocks||[]).includes(block)?'checked':''}><span>${block} Block</span></label>`).join('')}</div>`;});
+  courseBody.querySelectorAll('[data-course-offer-block]').forEach(box=>box.onchange=event=>{let course=data.courses[Number(event.target.dataset.courseOfferBlock)],blocks=[...courseBody.querySelectorAll(`[data-course-offer-block="${event.target.dataset.courseOfferBlock}"]:checked`)].map(item=>item.value);if(!blocks.length){event.target.checked=true;alert('A course must be offered in at least one block.');return}course.blocks=blocks;renderAll('Course blocks updated')});
+};
+const renderStudentsBeforeBothBlocks=renderStudents;
+renderStudents=()=>{let studentBlocks=data.students.map(student=>student.block),courseBlocks=data.courses.map(course=>course.block);data.students.forEach(student=>student.block='A');data.courses.forEach(course=>course.block='A');normalizeScheduleRules();renderStudentsBeforeBothBlocks();data.students.forEach((student,index)=>student.block=studentBlocks[index]||'A');data.courses.forEach((course,index)=>course.block=courseBlocks[index]||'A');let courses=data.courses.filter(course=>course.type==='level'||course.type==='choice');studentHead.innerHTML=`<th class="student-id-col">Student ID</th><th class="student-name-col">Name</th><th>Block</th><th>Homeroom</th>${courses.map(course=>`<th>${esc(course.name||course.id)}<br><span class="choice-note">Offered in ${(course.blocks||[]).join(' / ')} Block · pick ${course.pick}</span></th>`).join('')}<th></th>`;studentBody.querySelectorAll('tr').forEach((row,index)=>{let student=data.students[index];if(!student)return;let select=row.querySelector('select[data-key="block"]');if(select)select.value=student.block;courses.forEach((course,courseIndex)=>{let cell=row.children[4+courseIndex];if(cell&&!(course.blocks||[]).includes(student.block))cell.innerHTML='<span class="choice-note">Not offered in this block</span>';});});};
+const renderTeachersBeforeBothBlocks=renderTeachers;
+renderTeachers=()=>{normalizeTeacherAssignments();renderTeachersBeforeBothBlocks()};
+
+function exportTables(){
+  normalizeOptionVenues();normalizeScheduleRules();normalizeTeacherAssignments();normalizeTeacherAvailability();let defs=assignmentDefinitions(),assignmentRows=[],casRows=[],selectionRows=[],optionRows=[],availabilityRows=[];
+  for(const course of data.courses)course.options.forEach((option,index)=>{let venue=course.optionVenues[option]||{};optionRows.push([course.id,index+1,option,venue.enabled?venue.building||'':'',venue.enabled?venue.room||'':''])});
+  for(const teacher of data.teachers){for(const label of teacher.assignments||[]){let definition=defs.find(item=>item.label===label);assignmentRows.push([teacher.id,definition?.courseId||'',definition?.courseOption||definition?.option||'',definition?.block||'']);}if(teacher.casHomeroom)casRows.push([teacher.id,teacher.casHomeroom]);for(const day of AVAILABILITY_DAYS)for(const slot of data.timeslots||[])availabilityRows.push([teacher.id,day,slot.id,teacher.unavailable.includes(unavailableKey(day,slot.id))?0:1]);}
+  for(const student of data.students)for(const [courseId,values] of Object.entries(student.choices||{}))for(const value of values)selectionRows.push([student.id,courseId,value]);
+  return [['Buildings',[['BuildingID','BuildingName','Floors'],...data.buildings.map(building=>[building.id,building.name,building.floors])]],['Classrooms',[['RoomID','BuildingID','Floor','RoomOrdinal','RoomName'],...data.rooms.map(room=>[roomAutoId(room),room.building,room.floor,room.number,room.name])]],['BuildingDistances',[['FromBuildingID','ToBuildingID','DistanceMeters'],...data.distances.map(distance=>[distance.from,distance.to,distance.distance??distance.minutes])]],['TimeSlots',[['TimeSlotID','StartTime','EndTime'],...data.timeslots.map(slot=>[slot.id,slot.start,slot.end])]],['NoClassTimes',[['Day','TimeSlotID','Reason'],...data.blackouts.map(item=>[item.day,item.period,item.reason])]],['Homerooms',[['HomeroomID','HomeroomName','RoomID'],...data.homerooms.map(room=>[room.id,room.name,room.location])]],['Courses',[['CourseID','CourseName','OfferInA','OfferInB','PeriodsPerWeek','CourseType','OptionCount','StudentPickCount','AllGradeSameTime','RequireConsecutive'],...data.courses.map(course=>[course.id,course.name,(course.blocks||[]).includes('A')?1:0,(course.blocks||[]).includes('B')?1:0,course.periods,course.type,course.count,course.pick,course.allGradeSameTime?1:0,course.requireConsecutive?1:0])]],['CourseOptions',[['CourseID','OptionNumber','OptionName','RequiredBuildingID','RequiredRoomID'],...optionRows]],['Teachers',[['TeacherID','TeacherName'],...data.teachers.map(teacher=>[teacher.id,teacher.name])]],['TeacherAssignments',[['TeacherID','CourseID','CourseOption','Block'],...assignmentRows]],['TeacherAvailability',[['TeacherID','Day','TimeSlotID','Available'],...availabilityRows]],['TeacherCAS',[['TeacherID','HomeroomID'],...casRows]],['Students',[['StudentID','StudentName','Block','HomeroomID'],...data.students.map(student=>[student.id,student.name,student.block,student.homeroom])]],['StudentSelections',[['StudentID','CourseID','CourseOption'],...selectionRows]]];
+}
+const exampleBeforeCorrectBlocks=loadFiveTeacherFortyStudentExample;
+loadFiveTeacherFortyStudentExample=()=>{exampleBeforeCorrectBlocks();data.courses.forEach(course=>course.blocks=['A','B']);data.students.forEach((student,index)=>{student.block=index<20?'A':'B';if(!student.choices.ENG)student.choices.ENG=[['S','S+','H','H+'][index%4]];});data.courses.find(course=>course.id==='CAS').requireConsecutive=true;data.courses.find(course=>course.id==='CAS').allGradeSameTime=true;normalizeTeacherAssignments();renderAll('Loaded correct A/B example: same courses, separate classes and schedules')};$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;
+renderAll();
+</script><script>
+/* Compact selection summaries with focused editor panels. */
+function ensureSelectionEditor(){
+  let dialog=document.getElementById('selectionEditor');if(dialog)return dialog;
+  document.body.insertAdjacentHTML('beforeend','<dialog id="selectionEditor" class="selection-editor"></dialog>');return document.getElementById('selectionEditor');
+}
+function courseSelectionSummary(student){return Object.entries(student.choices||{}).filter(([, values])=>values.length).map(([courseId,values])=>{let course=data.courses.find(item=>item.id===courseId);return `${course?.name||courseId}: ${values.join(' / ')}`}).join('; ')||'Not selected';}
+renderTeachers=()=>{
+  normalizeTeacherAssignments();let definitions=assignmentDefinitions();
+  teacherBody.closest('table').querySelector('thead tr').innerHTML='<th>Teacher ID</th><th>Name</th><th>Selected courses</th><th>CAS homeroom</th><th></th>';
+  teacherBody.innerHTML=data.teachers.length?data.teachers.map((teacher,index)=>`<tr><td><input data-teacher-main="${index}" data-key="id" value="${esc(teacher.id)}"></td><td><input data-teacher-main="${index}" data-key="name" value="${esc(teacher.name)}"></td><td class="selection-summary">${esc((teacher.assignments||[]).join('; ')||'Not selected')}</td><td class="selection-summary">${esc(teacher.casHomeroom||'No homeroom')}</td><td><button class="secondary" data-edit-teacher="${index}">Edit selection</button><button class="remove" data-remove-teacher="${index}">Delete</button></td></tr>`).join(''):'<tr><td colspan="5"><div class="empty">No teachers yet</div></td></tr>';
+  teacherBody.querySelectorAll('[data-teacher-main]').forEach(input=>input.onchange=event=>{let teacher=data.teachers[Number(event.target.dataset.teacherMain)];teacher[event.target.dataset.key]=event.target.value;renderAll('Teacher information updated')});
+  teacherBody.querySelectorAll('[data-edit-teacher]').forEach(button=>button.onclick=()=>openTeacherSelectionEditor(Number(button.dataset.editTeacher),definitions));
+  teacherBody.querySelectorAll('[data-remove-teacher]').forEach(button=>button.onclick=()=>{data.teachers.splice(Number(button.dataset.removeTeacher),1);renderAll('Teacher deleted')});
+};
+function openTeacherSelectionEditor(index,definitions){let teacher=data.teachers[index],dialog=ensureSelectionEditor(),hasCas=data.courses.some(course=>course.type==='cas');dialog.innerHTML=`<form method="dialog" class="editor-card"><div class="editor-head"><h2>${esc(teacher.name||teacher.id)}: Course Selection</h2><button value="cancel" class="remove">Close</button></div><p class="hint">Select the course options this teacher can teach. Blocks A and B have separate classes and schedules.</p><div class="checkgrid editor-checks">${definitions.map(item=>`<label><input type="checkbox" data-editor-teacher-course value="${esc(item.label)}" ${(teacher.assignments||[]).includes(item.label)?'checked':''}><span>${esc(item.label)}</span></label>`).join('')}</div>${hasCas?`<label style="display:block;margin-top:16px">CAS homeroom teacher (maximum one)<select id="editorCasHomeroom"><option value="">No homeroom</option>${data.homerooms.map(room=>`<option value="${esc(room.id)}" ${teacher.casHomeroom===room.id?'selected':''}>${esc(room.name||room.id)}</option>`).join('')}</select></label>`:''}<div class="editor-actions"><button type="button" class="primary" id="saveTeacherSelection">Save selection</button></div></form>`;dialog.showModal();$('saveTeacherSelection').onclick=()=>{teacher.assignments=[...dialog.querySelectorAll('[data-editor-teacher-course]:checked')].map(input=>input.value);if(hasCas)teacher.casHomeroom=$('editorCasHomeroom').value;dialog.close();renderAll('Teacher selection saved')};}
+renderStudents=()=>{
+  normalizeScheduleRules();studentHead.innerHTML='<th class="student-id-col">Student ID</th><th class="student-name-col">Name</th><th>Block</th><th>Homeroom</th><th>Selected courses</th><th></th>';
+  studentBody.innerHTML=data.students.length?data.students.map((student,index)=>`<tr><td class="student-id-col"><input data-student-main="${index}" data-key="id" value="${esc(student.id)}"></td><td class="student-name-col"><input data-student-main="${index}" data-key="name" value="${esc(student.name)}"></td><td><select data-student-main="${index}" data-key="block">${SCHEDULE_BLOCKS.map(block=>`<option value="${block}" ${student.block===block?'selected':''}>${block} Block</option>`).join('')}</select></td><td><select data-student-main="${index}" data-key="homeroom"><option value="">Select</option>${data.homerooms.map(room=>`<option value="${esc(room.id)}" ${room.id===student.homeroom?'selected':''}>${esc(room.name||room.id)}</option>`).join('')}</select></td><td class="selection-summary">${esc(courseSelectionSummary(student))}</td><td><button class="secondary" data-edit-student="${index}">Edit choices</button><button class="remove" data-remove-student="${index}">Delete</button></td></tr>`).join(''):'<tr><td colspan="6"><div class="empty">No students yet</div></td></tr>';
+  studentBody.querySelectorAll('[data-student-main]').forEach(input=>input.onchange=event=>{let student=data.students[Number(event.target.dataset.studentMain)];student[event.target.dataset.key]=event.target.value;renderAll('Student information updated')});
+  studentBody.querySelectorAll('[data-edit-student]').forEach(button=>button.onclick=()=>openStudentSelectionEditor(Number(button.dataset.editStudent)));
+  studentBody.querySelectorAll('[data-remove-student]').forEach(button=>button.onclick=()=>{data.students.splice(Number(button.dataset.removeStudent),1);renderAll('Student deleted')});
+};
+function openStudentSelectionEditor(index){let student=data.students[index],dialog=ensureSelectionEditor(),courses=data.courses.filter(course=>(course.type==='level'||course.type==='choice')&&(course.blocks||[]).includes(student.block));dialog.innerHTML=`<form method="dialog" class="editor-card"><div class="editor-head"><h2>${esc(student.name||student.id)}: ${student.block} Block Course Choices</h2><button value="cancel" class="remove">Close</button></div><p class="hint">Only courses offered in this student's block are shown. Select options according to each course rule.</p>${courses.map(course=>{let chosen=student.choices?.[course.id]||[];return `<fieldset class="editor-course"><legend>${esc(course.name||course.id)} (pick  ${course.pick} ) </legend>${usable(course).map(option=>`<label><input type="checkbox" data-editor-student-course="${esc(course.id)}" value="${esc(option)}" ${chosen.includes(option)?'checked':''}><span>${esc(option)}</span></label>`).join('')}</fieldset>`}).join('')}<div class="editor-actions"><button type="button" class="primary" id="saveStudentSelection">Save choices</button></div></form>`;dialog.showModal();$('saveStudentSelection').onclick=()=>{for(const course of courses){let values=[...dialog.querySelectorAll(`[data-editor-student-course="${course.id}"]:checked`)].map(input=>input.value);if(values.length!==course.pick){alert(`${course.name||course.id} requires ${course.pick} picks.`);return}student.choices[course.id]=values;}dialog.close();renderAll('StudentCourse Choicessaved')};}
+let compactStyle=document.createElement('style');compactStyle.textContent='.selection-summary{min-width:260px;max-width:480px;white-space:normal;line-height:1.7}.selection-editor{width:min(760px,94vw);border:0;border-radius:14px;padding:0;box-shadow:0 20px 60px #182b40aa}.selection-editor::backdrop{background:#13283c88}.editor-card{padding:22px;max-height:85vh;overflow:auto}.editor-head{display:flex;justify-content:space-between;gap:20px;align-items:start}.editor-head h2{margin:0}.editor-checks{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin-top:12px}.editor-course{border:1px solid var(--line);border-radius:8px;margin:12px 0;padding:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.editor-course legend{font-weight:bold;padding:0 5px}.editor-course label{display:flex;gap:7px;align-items:center}.editor-course input{width:auto}.editor-actions{margin-top:18px;display:flex;justify-content:flex-end}.student-table{min-width:1050px}';document.head.appendChild(compactStyle);
+
+loadFiveTeacherFortyStudentExample=()=>{
+  if((data.students.length||data.teachers.length||data.courses.length)&&!confirm('Loading the example will replace the current input. Continue?'))return;
+  let homerooms=['10-1','10-2','10-3','10-4'],scienceChoices=[['Physics','Biology'],['Physics','Chemistry'],['Biology','Chemistry']],peChoices=['Soccer','Basketball','Fitness Training'],electives=['Elective A: Visual Arts','Elective B: Creative Writing','Elective C: Robotics','Elective D: Choir'];
+  data={buildings:[{id:'A',name:'Building A',floors:3},{id:'B',name:'Building B',floors:3},{id:'ART',name:'Arts Center',floors:2},{id:'SPT',name:'Sports Center',floors:1}],rooms:[{building:'A',floor:1,number:1,name:'10-1 Homeroom'},{building:'A',floor:1,number:2,name:'10-2 Homeroom'},{building:'A',floor:2,number:1,name:'General classroom'},{building:'B',floor:1,number:1,name:'10-3 Homeroom'},{building:'B',floor:1,number:2,name:'10-4 Homeroom'},{building:'B',floor:2,number:1,name:'General classroom'},{building:'ART',floor:1,number:1,name:'Art classroom'},{building:'SPT',floor:1,number:1,name:'Soccer Field'},{building:'SPT',floor:1,number:2,name:'Basketball Court'}],distances:[{from:'A',to:'B',distance:180},{from:'A',to:'ART',distance:260},{from:'A',to:'SPT',distance:220},{from:'B',to:'ART',distance:220},{from:'B',to:'SPT',distance:150},{from:'ART',to:'SPT',distance:280}],timeslots:[{id:'P1',start:'08:30',end:'09:30'},{id:'P2',start:'09:40',end:'10:20'},{id:'P3',start:'10:30',end:'11:10'},{id:'P4',start:'11:20',end:'12:05'},{id:'P5',start:'13:15',end:'14:10'},{id:'P6',start:'14:20',end:'15:00'},{id:'P7',start:'15:10',end:'15:50'}],blackouts:[{day:'Friday',period:'P6',reason:'Fixed no-class'},{day:'Friday',period:'P7',reason:'Fixed no-class'}],homerooms:[{id:'10-1',name:'10-1',location:'A-101'},{id:'10-2',name:'10-2',location:'A-102'},{id:'10-3',name:'10-3',location:'B-101'},{id:'10-4',name:'10-4',location:'B-102'}],courses:[{id:'ENG',name:'English',periods:4,type:'level',count:4,pick:1,options:['S','S+','H','H+'],blocks:['A','B'],optionVenues:{}},{id:'MATH',name:'Mathematics',periods:4,type:'level',count:2,pick:1,options:['A','B'],blocks:['A','B'],optionVenues:{}},{id:'SCI',name:'Science',periods:3,type:'choice',count:3,pick:2,options:['Physics','Biology','Chemistry'],blocks:['A','B'],optionVenues:{}},{id:'PE',name:'Physical Education',periods:2,type:'choice',count:3,pick:1,options:peChoices,blocks:['A','B'],optionVenues:{'Soccer':{enabled:true,building:'SPT',room:'SPT-101'},'Basketball':{enabled:true,building:'SPT',room:'SPT-102'},'Fitness Training':{enabled:true,building:'B',room:'B-201'}}},{id:'ELEC',name:'Electives',periods:1,type:'choice',count:4,pick:1,options:electives,blocks:['A','B'],optionVenues:{'Elective A: Visual Arts':{enabled:true,building:'ART',room:'ART-101'},'Elective B: Creative Writing':{enabled:true,building:'B',room:'B-201'},'Elective C: Robotics':{enabled:true,building:'A',room:'A-201'}}},{id:'CAS',name:'CAS',periods:2,type:'cas',count:0,pick:0,options:[],blocks:['A','B'],optionVenues:{},allGradeSameTime:true,requireConsecutive:true}],teachers:[{id:'TCH-01',name:'Teacher 01',assignments:[],casHomeroom:'10-1',unavailable:['Monday|P1','Wednesday|P7']},{id:'TCH-02',name:'Teacher 02',assignments:[],casHomeroom:'10-2',unavailable:['Tuesday|P5']},{id:'TCH-03',name:'Teacher 03',assignments:[],casHomeroom:'10-3',unavailable:['Thursday|P1','Thursday|P2']},{id:'TCH-04',name:'Teacher 04',assignments:[],casHomeroom:'10-4',unavailable:['Monday|P6']},{id:'TCH-05',name:'Teacher 05',assignments:[],casHomeroom:'',unavailable:['Wednesday|P1','Friday|P5']}],students:Array.from({length:40},(_,index)=>{let block=index<20?'A':'B',local=index%20;return{id:`STU-${String(index+1).padStart(3,'0')}`,name:`Student ${String(index+1).padStart(2,'0')}`,block,homeroom:homerooms[Math.floor(index/10)],choices:{ENG:[['S','S+','H','H+'][local%4]],MATH:[local%2?'B':'A'],SCI:scienceChoices[local%3],PE:[peChoices[local%3]],ELEC:[electives[local%4]]}}})};
+  data.rooms.forEach(room=>room.id=roomAutoId(room));normalizeOptionVenues();normalizeScheduleRules();let defs=assignmentDefinitions(),pick=(courseId,block)=>defs.filter(item=>item.courseId===courseId&&item.block===block).map(item=>item.label);data.teachers[0].assignments=pick('ENG','A');data.teachers[1].assignments=pick('ENG','B');data.teachers[2].assignments=[...pick('MATH','A'),...pick('SCI','A')];data.teachers[3].assignments=[...pick('MATH','B'),...pick('SCI','B'),...pick('PE','A'),...pick('PE','B')];data.teachers[4].assignments=[...pick('ELEC','A'),...pick('ELEC','B')];$('hrCount').value=4;$('hrGrade').value=10;normalizeTeacherAssignments();renderAll('Loaded full example: fields, A/B blocks, teacher assignments, and student choices synced')
+};
+$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;renderAll();
+</script><script>
+/* Final A/B rule: course split is an optimizer decision, never a student input. */
+function normalizeSplitRules(){(data.courses||[]).forEach(course=>{course.splitAB=!!course.splitAB;if(course.type==='required'||course.type==='cas'||course.id==='SCI')course.splitAB=false;if(course.allGradeSameTime)course.splitAB=false;});(data.students||[]).forEach(student=>delete student.block)}
+normalizeScheduleRules=normalizeSplitRules;
+assignmentDefinitions=()=>data.courses.flatMap(course=>course.type==='cas'?[]:(course.type==='required'?[{courseId:course.id,option:'',block:'',label:course.name||course.id}]:usable(course).flatMap(option=>course.splitAB?['A','B'].map(block=>({courseId:course.id,option,block,label:`${course.name||course.id} ${option} ${block}`})):[{courseId:course.id,option,block:'',label:`${course.name||course.id} ${option}`}])));
+normalizeTeacherAssignments=()=>{let definitions=assignmentDefinitions();data.teachers.forEach(teacher=>teacher.assignments=(teacher.assignments||[]).map(value=>{if(definitions.some(item=>item.label===value))return value;let matches=definitions.filter(item=>value===item.option||value===item.courseId||value===`${item.courseId} · ${item.option}`||value===`${item.courseId} · ${item.option} · A`||value===`${item.courseId} · ${item.option} · B`);return matches.length===1?matches[0].label:'';}).filter(Boolean));};
+const renderCoursesBeforeSplitRules=renderCourses;
+renderCourses=()=>{normalizeSplitRules();renderCoursesBeforeSplitRules();courseBody.closest('table').querySelector('thead tr').innerHTML='<th>Course ID</th><th>Course name</th><th>Periods / week</th><th>Type</th><th>Options</th><th>Student picks</th><th>A/B split</th><th>Rules</th><th></th>';let splitCells=[...new Set([...courseBody.querySelectorAll('[data-course-offer-block]')].map(input=>input.closest('td')))];splitCells.forEach(cell=>{let source=cell.querySelector('[data-course-offer-block]'),index=Number(source.dataset.courseOfferBlock),course=data.courses[index],scienceCrossBlock=course.id==='SCI',disabled=course.type==='required'||course.type==='cas'||course.allGradeSameTime||scienceCrossBlock;cell.innerHTML=scienceCrossBlock?'<span class="choice-note">Cross-block science choice</span>':disabled?'<span class="choice-note">No A/B split</span>':`<label class="choice-note"><input type="checkbox" data-course-split="${index}" ${course.splitAB?'checked':''}> Split into A / B</label>`;});courseBody.querySelectorAll('[data-course-same-time]').forEach(box=>box.onchange=event=>{let course=data.courses[Number(event.target.dataset.courseSameTime)];course.allGradeSameTime=event.target.checked;if(course.allGradeSameTime)course.splitAB=false;renderAll('All-grade same-time rule updated')});courseBody.querySelectorAll('[data-course-split]').forEach(box=>box.onchange=event=>{data.courses[Number(event.target.dataset.courseSplit)].splitAB=event.target.checked;renderAll('A/B split rule updated')});};
+renderStudents=()=>{normalizeSplitRules();studentHead.innerHTML='<th class="student-id-col">Student ID</th><th class="student-name-col">Name</th><th>Homeroom</th><th>Selected courses</th><th></th>';studentBody.innerHTML=data.students.length?data.students.map((student,index)=>`<tr><td class="student-id-col"><input data-student-main="${index}" data-key="id" value="${esc(student.id)}"></td><td class="student-name-col"><input data-student-main="${index}" data-key="name" value="${esc(student.name)}"></td><td><select data-student-main="${index}" data-key="homeroom"><option value="">Select</option>${data.homerooms.map(room=>`<option value="${esc(room.id)}" ${student.homeroom===room.id?'selected':''}>${esc(room.name||room.id)}</option>`).join('')}</select></td><td class="selection-summary">${esc(courseSelectionSummary(student))}</td><td><button class="secondary" data-edit-student="${index}">Edit choices</button><button class="remove" data-remove-student="${index}">Delete</button></td></tr>`).join(''):'<tr><td colspan="5"><div class="empty">No students yet</div></td></tr>';studentBody.querySelectorAll('[data-student-main]').forEach(input=>input.onchange=event=>{let student=data.students[Number(event.target.dataset.studentMain)];student[event.target.dataset.key]=event.target.value;renderAll('Student information updated')});studentBody.querySelectorAll('[data-edit-student]').forEach(button=>button.onclick=()=>openStudentSelectionEditor(Number(button.dataset.editStudent)));studentBody.querySelectorAll('[data-remove-student]').forEach(button=>button.onclick=()=>{data.students.splice(Number(button.dataset.removeStudent),1);renderAll('Student deleted')});};
+openStudentSelectionEditor=(index)=>{let student=data.students[index],dialog=ensureSelectionEditor(),courses=data.courses.filter(course=>course.type==='level'||course.type==='choice');dialog.innerHTML=`<form method="dialog" class="editor-card"><div class="editor-head"><h2>${esc(student.name||student.id)}: Course Choices</h2><button value="cancel" class="remove">Close</button></div><p class="hint">A/B placement is decided by the scheduler, not in student input.</p>${courses.map(course=>{let chosen=student.choices?.[course.id]||[];return `<fieldset class="editor-course"><legend>${esc(course.name||course.id)} (pick  ${course.pick} ) </legend>${usable(course).map(option=>`<label><input type="checkbox" data-editor-student-course="${esc(course.id)}" value="${esc(option)}" ${chosen.includes(option)?'checked':''}><span>${esc(option)}</span></label>`).join('')}</fieldset>`}).join('')}<div class="editor-actions"><button type="button" class="primary" id="saveStudentSelection">Save choices</button></div></form>`;dialog.showModal();$('saveStudentSelection').onclick=()=>{for(const course of courses){let values=[...dialog.querySelectorAll(`[data-editor-student-course="${course.id}"]:checked`)].map(input=>input.value);if(values.length!==course.pick){alert(`${course.name||course.id} requires ${course.pick} picks.`);return}student.choices[course.id]=values;}dialog.close();renderAll('StudentCourse Choicessaved')};};
+function exportTables(){normalizeOptionVenues();normalizeSplitRules();normalizeTeacherAssignments();normalizeTeacherAvailability();let definitions=assignmentDefinitions(),assignmentRows=[],casRows=[],selectionRows=[],optionRows=[],availabilityRows=[],balanceRows=[];for(const course of data.courses)course.options.forEach((option,index)=>{let venue=course.optionVenues[option]||{};optionRows.push([course.id,index+1,option,venue.enabled?venue.building||'':'',venue.enabled?venue.room||'':''])});for(const teacher of data.teachers){for(const label of teacher.assignments||[]){let definition=definitions.find(item=>item.label===label);assignmentRows.push([teacher.id,definition?.courseId||'',definition?.option||label,definition?.block||'']);}if(teacher.casHomeroom)casRows.push([teacher.id,teacher.casHomeroom]);for(const day of AVAILABILITY_DAYS)for(const slot of data.timeslots||[])availabilityRows.push([teacher.id,day,slot.id,teacher.unavailable.includes(unavailableKey(day,slot.id))?0:1]);}for(const student of data.students)for(const [courseId,values] of Object.entries(student.choices||{}))for(const value of values)selectionRows.push([student.id,courseId,value]);for(const room of data.homerooms){let count=data.students.filter(student=>student.homeroom===room.id).length;balanceRows.push([room.id,Math.floor(count/2),Math.ceil(count/2)]);}return [['Buildings',[['BuildingID','BuildingName','Floors'],...data.buildings.map(building=>[building.id,building.name,building.floors])]],['Classrooms',[['RoomID','BuildingID','Floor','RoomOrdinal','RoomName'],...data.rooms.map(room=>[roomAutoId(room),room.building,room.floor,room.number,room.name])]],['BuildingDistances',[['FromBuildingID','ToBuildingID','DistanceMeters'],...data.distances.map(distance=>[distance.from,distance.to,distance.distance??distance.minutes])]],['TimeSlots',[['TimeSlotID','StartTime','EndTime'],...data.timeslots.map(slot=>[slot.id,slot.start,slot.end])]],['NoClassTimes',[['Day','TimeSlotID','Reason'],...data.blackouts.map(item=>[item.day,item.period,item.reason])]],['Homerooms',[['HomeroomID','HomeroomName','RoomID'],...data.homerooms.map(room=>[room.id,room.name,room.location])]],['HomeroomBlockBalance',[['HomeroomID','MinStudentsPerBlock','MaxStudentsPerBlock'],...balanceRows]],['Courses',[['CourseID','CourseName','SplitAB','PeriodsPerWeek','CourseType','OptionCount','StudentPickCount','AllGradeSameTime','RequireConsecutive'],...data.courses.map(course=>[course.id,course.name,course.splitAB?1:0,course.periods,course.type,course.count,course.pick,course.allGradeSameTime?1:0,course.requireConsecutive?1:0])]],['CourseOptions',[['CourseID','OptionNumber','OptionName','RequiredBuildingID','RequiredRoomID'],...optionRows]],['Teachers',[['TeacherID','TeacherName'],...data.teachers.map(teacher=>[teacher.id,teacher.name])]],['TeacherAssignments',[['TeacherID','CourseID','CourseOption','Block'],...assignmentRows]],['TeacherAvailability',[['TeacherID','Day','TimeSlotID','Available'],...availabilityRows]],['TeacherCAS',[['TeacherID','HomeroomID'],...casRows]],['Students',[['StudentID','StudentName','HomeroomID'],...data.students.map(student=>[student.id,student.name,student.homeroom])]],['StudentSelections',[['StudentID','CourseID','CourseOption'],...selectionRows]]];}
+const exampleBeforeFinalSplit=loadFiveTeacherFortyStudentExample;loadFiveTeacherFortyStudentExample=()=>{exampleBeforeFinalSplit();let math=data.courses.find(course=>course.id==='MATH'),english=data.courses.find(course=>course.id==='ENG'),elective=data.courses.find(course=>course.id==='ELEC');if(math){math.options=['S','H'];math.count=2;math.pick=1;}if(english){english.options=['S','S+','H','H+'];english.count=4;english.pick=1;}let electiveNames=['Visual Arts','Creative Writing','Robotics','Choir'];if(elective){elective.options=electiveNames;elective.count=4;elective.pick=1;}data.courses.forEach(course=>{course.splitAB=course.id==='ENG'||course.id==='MATH'||course.id==='SCI';delete course.blocks;delete course.block;});let cas=data.courses.find(course=>course.id==='CAS'),pe=data.courses.find(course=>course.id==='PE');if(elective){elective.allGradeSameTime=true;elective.splitAB=false;}if(pe){pe.splitAB=false;pe.allGradeSameTime=false;}if(cas){cas.allGradeSameTime=true;cas.requireConsecutive=true;cas.splitAB=false;}data.students.forEach((student,index)=>{delete student.block;student.choices??={};student.choices.MATH=[index%2===0?'S':'H'];student.choices.ENG=[['S','S+','H','H+'][index%4]];student.choices.ELEC=[electiveNames[index%electiveNames.length]];});normalizeSplitRules();let defs=assignmentDefinitions(),pick=(courseId,block='')=>defs.filter(item=>item.courseId===courseId&&item.block===block).map(item=>item.label);data.teachers[0].assignments=pick('ENG','A');data.teachers[1].assignments=pick('ENG','B');data.teachers[2].assignments=[...pick('MATH','A'),...pick('SCI','A')];data.teachers[3].assignments=[...pick('MATH','B'),...pick('SCI','B'),...pick('PE')];data.teachers[4].assignments=pick('ELEC');renderAll('Loaded full example: electives use their content names')};$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;renderAll();
+</script><script>
+/* Keep the sample synchronized with science-level rules. */
+const exampleBeforeScienceLevels=loadFiveTeacherFortyStudentExample;
+loadFiveTeacherFortyStudentExample=()=>{
+  exampleBeforeScienceLevels();
+  let science=data.courses.find(course=>course.id==='SCI');
+  let scienceSelections=[['PHY S','CHEM S'],['PHY H','BIO H'],['CHEM H','BIO S']];
+  if(science){science.options=['PHY S','PHY H','CHEM S','CHEM H','BIO S','BIO H'];science.count=6;science.pick=2;}
+  data.students.forEach((student,index)=>{student.choices.SCI=scienceSelections[index%scienceSelections.length]});
+  normalizeTeacherAssignments();
+  let definitions=assignmentDefinitions(),pick=(courseId,block='')=>definitions.filter(item=>item.courseId===courseId&&item.block===block).map(item=>item.label);
+  // Science is not split into A/B: each Science option goes directly to eligible teachers; do not use empty SCI-A / SCI-B labels. 
+  data.teachers[2].assignments=[...pick('MATH','A'),...pick('SCI')];
+  data.teachers[3].assignments=[...pick('MATH','B'),...pick('SCI'),...pick('PE')];
+  renderAll('Loaded full example: PHY / CHEM / BIO use S/H levels');
+};
+$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;
+renderAll();
+</script><script>
+/* Hierarchical subject -> level selection, exported as flat small items. */
+function optionGroupsFor(course){
+  if(Array.isArray(course.optionGroups)&&course.optionGroups.length)return course.optionGroups;
+  return usable(course).map(option=>({name:option,items:[{label:option,level:''}]}));
+}
+openStudentSelectionEditor=(index)=>{
+  let student=data.students[index],dialog=ensureSelectionEditor(),courses=data.courses.filter(course=>course.type==='level'||course.type==='choice');
+  dialog.innerHTML=`<form method="dialog" class="editor-card"><div class="editor-head"><h2>${esc(student.name||student.id)}: Course Choices</h2><button value="cancel" class="remove">Close</button></div><p class="hint">For courses with subject-to-level groups, choose subjects first, then one level for each subject.</p>${courses.map(course=>{let chosen=student.choices?.[course.id]||[],groups=optionGroupsFor(course),hierarchical=groups.some(group=>group.items.length>1);return `<fieldset class="editor-course"><legend>${esc(course.name||course.id)} (pick ${course.pick} ${hierarchical?'subjects':'options'}) </legend>${groups.map(group=>hierarchical?`<div class="level-group"><b>${esc(group.name)}</b>${group.items.map(item=>`<label><input type="checkbox" data-editor-student-course="${esc(course.id)}" data-subject="${esc(group.name)}" value="${esc(item.label)}" ${chosen.includes(item.label)?'checked':''}><span>${esc(item.level)}</span></label>`).join('')}</div>`:group.items.map(item=>`<label><input type="checkbox" data-editor-student-course="${esc(course.id)}" value="${esc(item.label)}" ${chosen.includes(item.label)?'checked':''}><span>${esc(item.label)}</span></label>`).join('')).join('')}</fieldset>`}).join('')}<div class="editor-actions"><button type="button" class="primary" id="saveStudentSelection">Save choices</button></div></form>`;
+  dialog.showModal();
+  $('saveStudentSelection').onclick=()=>{for(const course of courses){let inputs=[...dialog.querySelectorAll(`[data-editor-student-course="${course.id}"]:checked`)],groups=optionGroupsFor(course),hierarchical=groups.some(group=>group.items.length>1),values=inputs.map(input=>input.value);if(hierarchical){let subjects=inputs.map(input=>input.dataset.subject),uniqueSubjects=new Set(subjects);if(uniqueSubjects.size!==subjects.length){alert(`${course.name||course.id}: choose only one level per subject.`);return}if(uniqueSubjects.size!==course.pick){alert(`${course.name||course.id} requires ${course.pick} different subjects.`);return}}else if(values.length!==course.pick){alert(`${course.name||course.id} requires ${course.pick} picks.`);return}student.choices[course.id]=values;}dialog.close();renderAll('StudentCourse Choicessaved')};
+};
+const exampleBeforeHierarchicalScience=loadFiveTeacherFortyStudentExample;
+loadFiveTeacherFortyStudentExample=()=>{exampleBeforeHierarchicalScience();let science=data.courses.find(course=>course.id==='SCI');if(science){science.optionGroups=[{name:'PHY',items:[{label:'PHY S',level:'S'},{label:'PHY H',level:'H'}]},{name:'CHEM',items:[{label:'CHEM S',level:'S'},{label:'CHEM H',level:'H'}]},{name:'BIO',items:[{label:'BIO S',level:'S'},{label:'BIO H',level:'H'}]}];science.options=science.optionGroups.flatMap(group=>group.items.map(item=>item.label));science.count=6;science.pick=2;}renderAll('Loaded science-level example: choose PHY/CHEM/BIO, then S/H level')};
+$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;
+let hierarchyStyle=document.createElement('style');hierarchyStyle.textContent='.level-group{border:1px solid var(--line);border-radius:7px;padding:8px;display:grid;grid-template-columns:90px repeat(auto-fit,minmax(70px,1fr));gap:7px;align-items:center}.level-group label{display:flex;gap:6px;align-items:center}.level-group input{width:auto}';document.head.appendChild(hierarchyStyle);
+renderAll();
+</script><script>
+/* Export selection hierarchy for validation, while keeping final course items flat. */
+const exportTablesBeforeSelectionGroups=exportTables;
+exportTables=()=>exportTablesBeforeSelectionGroups().map(([sheet,table])=>{
+  if(sheet!=='CourseOptions')return [sheet,table];
+  const rows=table.slice(1).map(row=>{
+    const course=data.courses.find(item=>item.id===row[0]);
+    const group=(course?.optionGroups||[]).find(item=>(item.items||[]).some(choice=>choice.label===row[2]));
+    const choice=group?.items.find(item=>item.label===row[2]);
+    return [...row,group?.name||row[2],choice?.level||''];
+  });
+  return [sheet,[['CourseID','OptionNumber','OptionName','RequiredBuildingID','RequiredRoomID','SelectionGroup','Level'],...rows]];
+});
+</script><section class="pipeline" id="pipelinePanel">
+  <div class="pipeline-title"><div><span class="eyebrow">LOCAL WORKFLOW</span><h2>Run the schedule</h2><p>Validate the input, calculate room distances, prepare the model, and run OR-Tools locally.</p></div><span class="pipeline-badge" id="pipelineMode">Local website required</span></div>
+  <div class="pipeline-file"><label for="pipelineFile">Step 1 input source</label><input type="file" id="pipelineFile" accept=".xlsx"><button type="button" class="secondary" id="useEditorInput">Use the form below</button><span id="pipelineFileName">Using the form below</span></div>
+  <div class="pipeline-steps">
+    <article><span>1</span><h3>Validate input</h3><p>Check courses, teachers, students, rooms, and time relationships.</p><button class="primary" id="runStep1">Run step 1</button></article>
+    <article><span>2</span><h3>Prepare model + distances</h3><p>Calculate every room pair, then build sections, candidates, and available times.</p><button class="primary" id="runStep2" disabled>Run step 2</button></article>
+    <article><span>3</span><h3>OR-Tools schedule</h3><p>Assign times, rooms, teachers, and A/B blocks, then build the timetable.</p><button class="primary" id="runStep3" disabled>Run step 3</button></article>
+  </div>
+  <div class="pipeline-result" id="pipelineResult">Start the local website, then enter data or load an Excel file.</div>
+  <div class="pipeline-downloads" id="pipelineDownloads" style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap"></div>
+  <div class="view-schedule-row">
+    <a id="viewSchedule" target="_blank" rel="noopener" aria-disabled="true" tabindex="-1" class="is-disabled">View generated timetable</a>
+    <span id="viewScheduleNote">Run step 3 first</span>
+  </div>
+</section><style>
+.pipeline{margin:34px auto;max-width:1140px;padding:24px;border:1px solid #cddcf0;border-radius:16px;background:linear-gradient(135deg,#f7fbff,#fff)}.pipeline-title{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}.pipeline h2,.analysis-panel h2{margin:3px 0 6px}.pipeline p,.analysis-panel p{margin:0;color:#53657b}.eyebrow{font-size:11px;letter-spacing:.12em;font-weight:700;color:#2c75bb}.pipeline-badge{white-space:nowrap;background:#e8eef6;color:#53657b;border-radius:999px;padding:7px 10px;font-size:13px;font-weight:600}.pipeline-file{display:flex;gap:12px;align-items:center;margin:20px 0;padding:12px;border:1px dashed #b9cce2;border-radius:10px}.pipeline-file label{font-weight:700}.pipeline-file span{color:#60728a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pipeline-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.pipeline-steps article{position:relative;padding:18px;border:1px solid #d8e3ef;border-radius:12px;background:#fff}.pipeline-steps article>span{display:inline-grid;place-items:center;width:26px;height:26px;background:#1769aa;color:#fff;font-weight:700;border-radius:50%}.pipeline-steps h3{margin:10px 0 5px}.pipeline-steps p{min-height:40px;font-size:14px;margin-bottom:14px}.pipeline-steps button:disabled{opacity:.45;cursor:not-allowed}.pipeline-result{margin-top:16px;padding:13px;background:#102b45;color:#eaf4ff;border-radius:10px;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.55;min-height:22px}.pipeline-downloads{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}.pipeline-downloads a{background:#e1f2e8;color:#145c31;padding:7px 10px;border-radius:7px;text-decoration:none;font-weight:600;font-family:inherit}.view-schedule-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}#viewSchedule{display:inline-flex;align-items:center;gap:9px;padding:11px 17px;border-radius:9px;font-weight:700;text-decoration:none;border:1px solid transparent;transition:transform .15s ease,box-shadow .15s ease,background .15s ease}#viewSchedule::after{content:"→";font-size:16px;line-height:1}#viewSchedule.is-disabled{background:#e8eef6;color:#8595a8;border-color:#d8e3ef;cursor:not-allowed}#viewSchedule.is-ready{background:linear-gradient(135deg,#1769aa,#12395f);color:#fff;box-shadow:0 6px 16px rgba(18,57,95,.22)}#viewSchedule.is-ready:hover{transform:translateY(-1px);box-shadow:0 9px 20px rgba(18,57,95,.28)}#viewSchedule.is-ready:focus-visible{outline:3px solid #8ec5ff;outline-offset:2px}#viewScheduleNote{color:#7b8ba0;font-size:13px}.analysis-panel{margin:0 auto 34px;max-width:1140px;padding:24px;border:1px solid #cddcf0;border-radius:16px;background:#fff}.analysis-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}.analysis-content{margin-top:18px}.analysis-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.analysis-card{padding:14px;border:1px solid #d8e3ef;border-radius:10px;background:#f8fbff}.analysis-card b{display:block;font-size:24px;color:#183e61}.analysis-card span{font-size:13px;color:#52677f}.analysis-section{margin-top:18px;padding-top:14px;border-top:1px solid #dce6f1}.analysis-section h3{margin:0 0 8px}.adjustment-card{border:1px solid #d8e3ef;border-left:4px solid #b42318;border-radius:8px;padding:13px;margin:10px 0;background:#fff}.adjustment-card h4{margin:0 0 7px}.adjustment-card p{margin:5px 0;color:#22384f}.adjustment-card code{white-space:normal}.copy-action{margin-top:8px}.bar-row{display:grid;grid-template-columns:110px 1fr 58px;gap:10px;align-items:center;margin:7px 0;font-size:13px}.bar-track{height:16px;border-radius:99px;background:#e7eef5;overflow:hidden}.bar-fill{height:100%;background:#2876b9;border-radius:99px}.check-pass{color:#157347}.check-fail{color:#b42318}.check-uncovered{color:#805b10}@media(max-width:720px){.pipeline-title,.analysis-head{display:block}.pipeline-badge{display:inline-block;margin-top:10px}.pipeline-file{align-items:flex-start;flex-direction:column}.pipeline-steps,.analysis-cards{grid-template-columns:1fr}.bar-row{grid-template-columns:90px 1fr 52px}}
+</style><script>
+/* A fresh, solver-friendly 10-teacher / 40-student data set on every click.
+   Randomness is deliberately balanced: each option has enough teachers, all
+   four unified electives can run in parallel, and no teacher is left unused. */
+function generateRandomTenTeacherExample(){
+  if((data.students.length||data.teachers.length||data.courses.length)&&!confirm('Generating a random example will replace the current input. Continue?'))return;
+  const choose=items=>items[Math.floor(Math.random()*items.length)];
+  const shuffled=items=>[...items].sort(()=>Math.random()-.5);
+  const homerooms=['10-1','10-2','10-3','10-4'],english=['S','H'],math=['S','H'],pe=['Soccer','Basketball','Fitness Training'],electives=['Visual Arts','Creative Writing','Robotics','Choir'],mod2=['Econ','CS','Geo','VA'];
+  const scienceGroups=[['PHY S','PHY H'],['CHEM S','CHEM H'],['BIO S','BIO H']];
+  const balanced=(items,total)=>shuffled(Array.from({length:total},(_,index)=>items[index%items.length]));
+  const sciencePairs=shuffled(Array.from({length:40},(_,index)=>[
+    ['PHY S','CHEM S'],['PHY H','BIO H'],['CHEM H','BIO S']
+  ][index%3]));
+  const engChoices=balanced(english,40), mathChoices=balanced(math,40), peChoices=balanced(pe,40), electiveChoices=balanced(electives,40),mod2Choices=balanced(mod2,40);
+  data={
+    buildings:[{id:'A',name:'Building A',floors:3,special:false},{id:'B',name:'Building B',floors:3,special:false},{id:'ART',name:'Arts Center',floors:2,special:true},{id:'SPT',name:'Sports Center',floors:1,special:true}],
+    rooms:[{building:'A',floor:1,number:1,name:'10-1 Homeroom'},{building:'A',floor:1,number:2,name:'10-2 Homeroom'},{building:'A',floor:2,number:1,name:'General classroom A-201'},{building:'A',floor:2,number:2,name:'General classroom A-202'},{building:'A',floor:2,number:3,name:'General classroom A-203'},{building:'A',floor:3,number:1,name:'General classroom A-301'},{building:'A',floor:3,number:2,name:'General classroom A-302'},{building:'B',floor:1,number:1,name:'10-3 Homeroom'},{building:'B',floor:1,number:2,name:'10-4 Homeroom'},{building:'B',floor:2,number:1,name:'General classroom B-201'},{building:'B',floor:2,number:2,name:'General classroom B-202'},{building:'B',floor:2,number:3,name:'General classroom B-203'},{building:'B',floor:3,number:1,name:'General classroom B-301'},{building:'B',floor:3,number:2,name:'General classroom B-302'},{building:'ART',floor:1,number:1,name:'Visual Arts Room'},{building:'ART',floor:1,number:2,name:'Art Studio'},{building:'ART',floor:2,number:1,name:'Gallery'},{building:'SPT',floor:1,number:1,name:'Soccer Field'},{building:'SPT',floor:1,number:2,name:'Basketball Court'},{building:'SPT',floor:1,number:3,name:'Multi-purpose Field'}],
+    distances:[{from:'A',to:'B',distance:180},{from:'A',to:'ART',distance:260},{from:'A',to:'SPT',distance:220},{from:'B',to:'ART',distance:220},{from:'B',to:'SPT',distance:150},{from:'ART',to:'SPT',distance:280}],
+    timeslots:[{id:'P1',start:'08:30',end:'09:30'},{id:'P2',start:'09:40',end:'10:20'},{id:'P3',start:'10:30',end:'11:10'},{id:'P4',start:'11:20',end:'12:05'},{id:'P5',start:'13:15',end:'14:10'},{id:'P6',start:'14:20',end:'15:00'},{id:'P7',start:'15:10',end:'15:50'}],
+    blackouts:[{day:'Friday',period:'P6',reason:'Fixed no-class'},{day:'Friday',period:'P7',reason:'Fixed no-class'}],
+    homerooms:homerooms.map((id,index)=>({id,name:id,location:index<2?`A-10${index+1}`:`B-10${index-1}`})),
+    courses:[
+      {id:'ENG',name:'English',periods:4,type:'level',count:2,pick:1,options:english,splitAB:true,optionVenues:{}},
+      {id:'MATH',name:'Mathematics',periods:4,type:'level',count:2,pick:1,options:math,splitAB:true,optionVenues:{}},
+      {id:'SCI',name:'Science',periods:3,type:'choice',count:6,pick:2,options:scienceGroups.flat(),optionGroups:scienceGroups.map((items,index)=>({name:['PHY','CHEM','BIO'][index],items:items.map(level=>({label:level,level:level.split(' ')[1]}))})),splitAB:false,optionVenues:{}},
+      {id:'PE',name:'Physical Education',periods:2,type:'choice',count:3,pick:1,options:pe,splitAB:false,allGradeSameTime:true,optionVenues:{'Soccer':{enabled:true,building:'SPT',room:'SPT-101'},'Basketball':{enabled:true,building:'SPT',room:'SPT-102'},'Fitness Training':{enabled:true,building:'B',room:'B-201'}}},
+      {id:'ELEC',name:'Electives',periods:1,type:'choice',count:4,pick:1,options:electives,splitAB:false,allGradeSameTime:true,optionVenues:{'Visual Arts':{enabled:true,building:'ART',room:'ART-101'},'Creative Writing':{enabled:true,building:'B',room:'B-201'},'Robotics':{enabled:true,building:'A',room:'A-201'}}},
+      {id:'MOD2',name:'Mod2',periods:2,type:'choice',count:4,pick:1,options:mod2,splitAB:false,optionVenues:{'VA':{enabled:true,building:'ART',room:''}}},
+      {id:'CAS',name:'CAS',periods:2,type:'cas',count:0,pick:0,options:[],splitAB:false,allGradeSameTime:true,requireConsecutive:true,optionVenues:{}}
+    ],
+    teachers:Array.from({length:10},(_,index)=>({id:`TCH-${String(index+1).padStart(2,'0')}`,name:`Teacher ${String(index+1).padStart(2,'0')}`,assignments:[],casHomeroom:'',unavailable:[]})),
+    students:Array.from({length:40},(_,index)=>({id:`STU-${String(index+1).padStart(3,'0')}`,name:`Student ${String(index+1).padStart(2,'0')}`,homeroom:homerooms[Math.floor(index/10)],choices:{ENG:[engChoices[index]],MATH:[mathChoices[index]],SCI:sciencePairs[index],PE:[peChoices[index]],ELEC:[electiveChoices[index]],MOD2:[mod2Choices[index]]}}))
+  };
+  data.rooms.forEach(room=>room.id=roomAutoId(room));normalizeOptionVenues();normalizeSplitRules();
+  let definitions=assignmentDefinitions(),pick=(courseId,block='')=>definitions.filter(item=>item.courseId===courseId&&item.block===block).map(item=>item.label),pickOption=option=>definitions.filter(item=>item.courseId==='ELEC'&&item.option===option).map(item=>item.label);
+  const teacherOrder=shuffled(data.teachers);
+  const teachingBundles=[
+    [...definitions.filter(item=>item.courseId==='ENG'&&item.block==='A'&&item.option==='S').map(item=>item.label),...pickOption('Visual Arts')],
+    [...definitions.filter(item=>item.courseId==='ENG'&&item.block==='B'&&item.option==='S').map(item=>item.label),...pickOption('Creative Writing')],
+    [...definitions.filter(item=>item.courseId==='MATH'&&item.block==='A'&&item.option==='S').map(item=>item.label),...pickOption('Robotics')],
+    [...definitions.filter(item=>item.courseId==='MATH'&&item.block==='A'&&item.option==='H').map(item=>item.label),...pickOption('Choir')],
+    [...definitions.filter(item=>item.courseId==='SCI'&&['PHY S','PHY H'].includes(item.option)).map(item=>item.label),...pick('PE').filter(label=>label.includes('Soccer'))],
+    [...definitions.filter(item=>item.courseId==='SCI'&&['CHEM S','CHEM H'].includes(item.option)).map(item=>item.label),...pick('PE').filter(label=>label.includes('Basketball'))],
+    [...definitions.filter(item=>item.courseId==='SCI'&&['BIO S','BIO H'].includes(item.option)).map(item=>item.label),...pick('PE').filter(label=>label.includes('Fitness Training'))],
+    [...definitions.filter(item=>item.courseId==='ENG'&&item.block==='A'&&item.option==='H').map(item=>item.label),...definitions.filter(item=>item.courseId==='MATH'&&item.block==='B'&&item.option==='H').map(item=>item.label)],
+    [...definitions.filter(item=>item.courseId==='ENG'&&item.block==='B'&&item.option==='H').map(item=>item.label)],
+    [...definitions.filter(item=>item.courseId==='MATH'&&item.block==='B'&&item.option==='S').map(item=>item.label)]
+  ];
+  teacherOrder.forEach((teacher,index)=>{teacher.assignments=teachingBundles[index];teacher.casHomeroom=index>=4&&index<8?homerooms[index-4]:'';});
+  $('hrCount').value=4;$('hrGrade').value=10;normalizeTeacherAssignments();renderAll('Generated balanced random example: 10 teachers, 40 students; coverage, parallel electives, and teacher loads are pre-balanced.');
+}
+const randomExampleButton=document.createElement('button');
+randomExampleButton.type='button';randomExampleButton.className='secondary';randomExampleButton.id='randomExampleBtn';randomExampleButton.textContent='Generate random 5-teacher / 40-student example';
+$('exampleBtn').insertAdjacentElement('afterend',randomExampleButton);
+randomExampleButton.textContent='Generate balanced random 10-teacher / 40-student example';
+randomExampleButton.onclick=generateRandomTenTeacherExample;
+</script><script>
+/* Per-course, balanced random enrolment for a newly added course. */
+function randomItem(items){return items[Math.floor(Math.random()*items.length)];}
+function chooseLeastLoaded(teachers, excludedIds=new Set()){
+  let pool=teachers.filter(teacher=>!excludedIds.has(teacher.id));
+  if(!pool.length)pool=teachers;
+  let lowest=Math.min(...pool.map(teacher=>(teacher.assignments||[]).length));
+  return randomItem(pool.filter(teacher=>(teacher.assignments||[]).length===lowest));
+}
+function autoPopulateCourse(course){
+  normalizeSplitRules();normalizeTeacherAssignments();
+  let options=usable(course).filter(Boolean),students=data.students||[],teachers=data.teachers||[];
+  if(course.type!=='required'&&course.type!=='cas'&&(!options.length||options.some(option=>!String(option).trim()))){
+    return {ok:false,message:'Fill in all level / option names for this course before random assignment.'};
+  }
+  if(!teachers.length)return {ok:false,message:'Add at least one teacher before random assignment.'};
+  let studentChoices=0,optionCounts=new Map(options.map(option=>[option,0]));
+  if(course.type==='level'||course.type==='choice'){
+    let needed=Math.min(Math.max(1,Number(course.pick)||1),options.length);
+    students.forEach(student=>{
+      let picked=[];
+      for(let slot=0;slot<needed;slot++){
+        let available=options.filter(option=>!picked.includes(option));
+        let minimum=Math.min(...available.map(option=>optionCounts.get(option)));
+        let choice=randomItem(available.filter(option=>optionCounts.get(option)===minimum));
+        picked.push(choice);optionCounts.set(choice,optionCounts.get(choice)+1);
+      }
+      student.choices??={};student.choices[course.id]=picked;studentChoices+=picked.length;
+    });
+  }
+  let definitions=assignmentDefinitions().filter(definition=>definition.courseId===course.id);
+  let courseLabels=new Set(definitions.map(definition=>definition.label));
+  teachers.forEach(teacher=>teacher.assignments=(teacher.assignments||[]).filter(label=>!courseLabels.has(label)));
+  let usedAtUnifiedTime=new Set(),teacherAssignments=0;
+  definitions.forEach(definition=>{
+    let teacher=chooseLeastLoaded(teachers,course.allGradeSameTime?usedAtUnifiedTime:new Set());
+    if(!teacher)return;
+    teacher.assignments.push(definition.label);teacherAssignments++;
+    if(course.allGradeSameTime)usedAtUnifiedTime.add(teacher.id);
+  });
+  course.autoPopulate=true;normalizeTeacherAssignments();
+  let uniqueTeachers=new Set(teachers.filter(teacher=>(teacher.assignments||[]).some(label=>courseLabels.has(label))).map(teacher=>teacher.id)).size;
+  return {ok:true,message:`Randomly assigned: ${studentChoices} StudentOption, ${teacherAssignments} Teacherlesson; This course uses ${uniqueTeachers} teachers.`};
+}
+const renderCoursesBeforeAutoPopulate=renderCourses;
+renderCourses=()=>{
+  renderCoursesBeforeAutoPopulate();
+  let header=courseBody.closest('table').querySelector('thead tr');
+  header.insertAdjacentHTML('beforeend','<th>Random assignment</th>');
+  data.courses.forEach((course,index)=>{
+    let source=courseBody.querySelector(`[data-course="${index}"][data-key="id"]`);if(!source)return;
+    let row=source.closest('tr'),cell=document.createElement('td'),isCas=course.type==='cas';
+    cell.innerHTML=isCas?'<span class="choice-note">Assign a CAS homeroom teacher</span>':`<label class="choice-note" style="display:block"><input type="checkbox" data-auto-populate="${index}" ${course.autoPopulate?'checked':''}> Randomly assign students + teachers</label><button type="button" class="secondary" data-run-auto-populate="${index}" style="margin-top:6px">${course.autoPopulate?'Reassign randomly':'Assign randomly now'}</button>`;
+    row.appendChild(cell);
+  });
+  let run=index=>{let result=autoPopulateCourse(data.courses[index]);if(!result.ok){alert(result.message);return;}renderAll(result.message);};
+  courseBody.querySelectorAll('[data-auto-populate]').forEach(input=>input.onchange=event=>{let index=Number(event.target.dataset.autoPopulate);if(!event.target.checked){data.courses[index].autoPopulate=false;renderAll('Course random assignment disabled; existing student choices and teacher assignments were kept.');return;}run(index);});
+  courseBody.querySelectorAll('[data-run-auto-populate]').forEach(button=>button.onclick=()=>run(Number(button.dataset.runAutoPopulate)));
+};
+renderAll();
+</script><script>
+/* Schedule Type is a general rule, not a science-only exception.
+   A course has three Type sections whenever it is neither A/B-split nor
+   whole-grade simultaneous. */
+function normalizeTypeRules(){
+  normalizeSplitRules();
+  (data.courses||[]).forEach(course=>{
+    const needsType=course.type!=='cas'&&!course.splitAB&&!course.allGradeSameTime;
+    course.typeCount=needsType?Math.max(2,Number(course.typeCount)||3):0;
+  });
+}
+assignmentDefinitions=()=>data.courses.flatMap(course=>{
+  if(course.type==='cas')return [];
+  const options=course.type==='required'?['']:usable(course);
+  const blocks=course.splitAB?['A','B']:[''];
+  const types=course.typeCount?Array.from({length:course.typeCount},(_,i)=>`T${i+1}`):[''];
+  return options.flatMap(option=>blocks.flatMap(block=>types.map(scheduleType=>({
+    courseId:course.id,option,block,type:scheduleType,
+    label:[course.name||course.id,option,block,scheduleType].filter(Boolean).join(' ')
+  }))));
+});
+normalizeTeacherAssignments=()=>{const defs=assignmentDefinitions();data.teachers.forEach(teacher=>teacher.assignments=[...(teacher.assignments||[])].flatMap(value=>{if(defs.some(def=>def.label===value))return [value];const matches=defs.filter(def=>{const course=data.courses.find(item=>item.id===def.courseId)||{};const oldLabels=[def.option,def.courseId,`${def.courseId} · ${def.option}`,`${course.name||def.courseId} ${def.option}`.trim(),course.name||def.courseId];return oldLabels.includes(value);});return matches.map(def=>def.label);}).filter(Boolean));};
+const renderCoursesBeforeGeneralTypes=renderCourses;
+renderCourses=()=>{
+  normalizeTypeRules();renderCoursesBeforeGeneralTypes();
+  const header=courseBody.closest('table').querySelector('thead tr');
+  if(!header.querySelector('[data-type-heading]'))header.insertAdjacentHTML('beforeend','<th data-type-heading>Schedule Type</th>');
+  data.courses.forEach((course,index)=>{
+    const source=courseBody.querySelector(`[data-course="${index}"][data-key="id"]`);if(!source)return;
+    const cell=document.createElement('td');
+    cell.innerHTML=course.typeCount?`<span class="choice-note">Automatically split into T1–T${course.typeCount}<br>(not A/B, not all-grade)</span>`:'<span class="choice-note">Not used Type</span>';
+    source.closest('tr').appendChild(cell);
+  });
+};
+const exportTablesBeforeGeneralTypes=exportTables;
+exportTables=()=>{
+  normalizeTypeRules();normalizeTeacherAssignments();
+  const tables=exportTablesBeforeGeneralTypes();
+  const courses=tables.find(table=>table[0]==='Courses');
+  if(courses&&!courses[1][0].includes('TypeCount')){
+    courses[1][0].splice(7,0,'TypeCount');
+    courses[1].slice(1).forEach((row,index)=>row.splice(7,0,data.courses[index]?.typeCount||0));
+  }
+  const assignments=tables.find(table=>table[0]==='TeacherAssignments');
+  if(assignments){
+    const defs=assignmentDefinitions(),rows=[];
+    data.teachers.forEach(teacher=>(teacher.assignments||[]).forEach(label=>{
+      const def=defs.find(item=>item.label===label);
+      if(def)rows.push([teacher.id,def.courseId,def.option,def.block,def.type]);
+    }));
+    assignments[1]=[['TeacherID','CourseID','CourseOption','Block','Type'],...rows];
+  }
+  return tables;
+};
+const randomExampleBeforeTypeBalancing=$('randomExampleBtn').onclick;
+$('randomExampleBtn').onclick=()=>{
+  randomExampleBeforeTypeBalancing();normalizeTypeRules();
+  const typed=assignmentDefinitions().filter(def=>def.type),typedLabels=new Set(typed.map(def=>def.label));
+  data.teachers.forEach(teacher=>teacher.assignments=(teacher.assignments||[]).filter(label=>!typedLabels.has(label)));
+  typed.sort(()=>Math.random()-.5).forEach(def=>{
+    const load=teacher=>((teacher.assignments||[]).length);
+    const lowest=Math.min(...data.teachers.map(load));
+    randomItem(data.teachers.filter(teacher=>load(teacher)===lowest)).assignments.push(def.label);
+  });
+  normalizeTeacherAssignments();renderAll('Generated balanced random example with standard rooms and Mod2 (Econ / CS / Geo / VA); student choices and teacher assignments are balanced, and VA uses the Arts Center.');
+};
+renderAll('Enabled general Type: every non-A/B, non-all-grade course uses T1–T3.');
+</script>
+<script>
+/* Special-building rule: ordinary classes may not use these buildings unless
+   their individual course option explicitly selects that building or room. */
+function normalizeSpecialBuildings(){
+  (data.buildings||[]).forEach(building=>{
+    if(building.special===undefined){
+      building.special=['ART','SPT'].includes(String(building.id||'').toUpperCase());
+    }
+  });
+}
+const renderCampusBeforeSpecialBuildings=renderCampus;
+renderCampus=()=>{
+  normalizeSpecialBuildings();
+  renderCampusBeforeSpecialBuildings();
+  const body=$('buildingBody');
+  const table=body?.closest('table');
+  const head=table?.querySelector('thead tr');
+  if(!body||!head)return;
+  if(!head.querySelector('[data-special-building-head]')){
+    const heading=document.createElement('th');
+    heading.dataset.specialBuildingHead='1';heading.textContent='Special building';head.insertBefore(heading,head.lastElementChild);
+  }
+  data.buildings.forEach((building,index)=>{
+    const source=body.querySelector(`[data-building="${index}"][data-key="id"]`);
+    const row=source?.closest('tr');
+    if(!row)return;
+    const cell=document.createElement('td');
+    cell.innerHTML=`<label class="choice-note"><input type="checkbox" data-special-building="${index}" ${building.special?'checked':''}> Yes</label>`;
+    row.insertBefore(cell,row.lastElementChild);
+  });
+  body.querySelectorAll('[data-special-building]').forEach(box=>box.onchange=event=>{
+    data.buildings[Number(event.target.dataset.specialBuilding)].special=event.target.checked;
+    renderAll(event.target.checked?'Marked as a special building: only courses with an explicit venue can use it.':'Changed to a standard building: ordinary courses can use it.');
+  });
+};
+const exportTablesBeforeSpecialBuildings=exportTables;
+exportTables=()=>{
+  normalizeSpecialBuildings();
+  const tables=exportTablesBeforeSpecialBuildings();
+  const buildings=tables.find(table=>table[0]==='Buildings');
+  if(buildings&&!buildings[1][0].includes('IsSpecialBuilding')){
+    buildings[1][0].push('IsSpecialBuilding');
+    buildings[1].slice(1).forEach((row,index)=>row.push(data.buildings[index]?.special?1:0));
+  }
+  return tables;
+};
+const autoPopulateCourseBeforeTeacherAware=autoPopulateCourse;
+autoPopulateCourse=course=>{
+  normalizeTypeRules();
+  const result=autoPopulateCourseBeforeTeacherAware(course);
+  if(result?.ok){
+    result.message=result.message.replace('Randomly assigned: ','Random assignment complete (students + teachers): ');
+  }
+  return result;
+};
+renderAll('Enabled special buildings: ordinary courses cannot use special buildings; random assignment includes students and teachers.');
+</script>
+<script>
+/* Teacher capability is deliberately independent of A/B and Type.  Those are
+   scheduler decisions, while a teacher only declares course + level/option. */
+function teacherCapabilityDefinitions(){
+  return (data.courses||[]).flatMap(course=>{
+    if(course.type==='cas')return [];
+    const options=course.type==='required'?['']:(usable(course)||[]);
+    return options.filter(Boolean).map(option=>({
+      courseId:course.id, option,
+      label:[course.name||course.id,option].filter(Boolean).join(' ')
+    }));
+  });
+}
+normalizeTeacherAssignments=()=>{
+  const definitions=teacherCapabilityDefinitions();
+  (data.teachers||[]).forEach(teacher=>{
+    const normalized=[];
+    for(const raw of teacher.assignments||[]){
+      const value=String(raw||'').trim();
+      const match=definitions.find(def=>
+        value===def.label || value.startsWith(`${def.label} `) ||
+        value===def.option || value===`${def.courseId} ${def.option}` ||
+        (def.option===''&&(value===def.courseId||value===def.label))
+      );
+      if(match&&!normalized.includes(match.label))normalized.push(match.label);
+    }
+    teacher.assignments=normalized;
+  });
+};
+function openTeacherSelectionEditor(index){
+  normalizeTeacherAssignments();
+  const teacher=data.teachers[index],definitions=teacherCapabilityDefinitions(),dialog=ensureSelectionEditor();
+  const hasCas=data.courses.some(course=>course.type==='cas');
+  dialog.innerHTML=`<form method="dialog" class="editor-card"><div class="editor-head"><h2>${esc(teacher.name||teacher.id)}: Course Selection</h2><button value="cancel" class="remove">Close</button></div><p class="hint">Select only the courses and levels/options this teacher can teach. A/B and internal groups are decided by the scheduler.</p><div class="checkgrid editor-checks">${definitions.map(item=>`<label><input type="checkbox" data-editor-teacher-course value="${esc(item.label)}" ${(teacher.assignments||[]).includes(item.label)?'checked':''}><span>${esc(item.label)}</span></label>`).join('')}</div>${hasCas?`<label style="display:block;margin-top:16px">CAS homeroom teacher (maximum one)<select id="editorCasHomeroom"><option value="">No homeroom</option>${data.homerooms.map(room=>`<option value="${esc(room.id)}" ${teacher.casHomeroom===room.id?'selected':''}>${esc(room.name||room.id)}</option>`).join('')}</select></label>`:''}<div class="editor-actions"><button type="button" class="primary" id="saveTeacherSelection">Save selection</button></div></form>`;
+  dialog.showModal();
+  $('saveTeacherSelection').onclick=()=>{
+    teacher.assignments=[...dialog.querySelectorAll('[data-editor-teacher-course]:checked')].map(input=>input.value);
+    if(hasCas)teacher.casHomeroom=$('editorCasHomeroom').value;
+    dialog.close();renderAll('Teacher courses saved');
+  };
+}
+renderTeachers=()=>{
+  normalizeTeacherAssignments();
+  teacherBody.closest('table').querySelector('thead tr').innerHTML='<th>Teacher ID</th><th>Name</th><th>Selected courses / levels</th><th>CAS homeroom</th><th></th>';
+  teacherBody.innerHTML=data.teachers.length?data.teachers.map((teacher,index)=>`<tr><td><input data-teacher-main="${index}" data-key="id" value="${esc(teacher.id)}"></td><td><input data-teacher-main="${index}" data-key="name" value="${esc(teacher.name)}"></td><td class="selection-summary">${esc((teacher.assignments||[]).join('; ')||'Not selected')}</td><td class="selection-summary">${esc(teacher.casHomeroom||'No homeroom')}</td><td><button class="secondary" data-edit-teacher="${index}">Edit selection</button><button class="remove" data-remove-teacher="${index}">Delete</button></td></tr>`).join(''):'<tr><td colspan="5"><div class="empty">No teachers yet</div></td></tr>';
+  teacherBody.querySelectorAll('[data-teacher-main]').forEach(input=>input.onchange=event=>{const teacher=data.teachers[Number(event.target.dataset.teacherMain)];teacher[event.target.dataset.key]=event.target.value;renderAll('Teacher information updated')});
+  teacherBody.querySelectorAll('[data-edit-teacher]').forEach(button=>button.onclick=()=>openTeacherSelectionEditor(Number(button.dataset.editTeacher)));
+  teacherBody.querySelectorAll('[data-remove-teacher]').forEach(button=>button.onclick=()=>{data.teachers.splice(Number(button.dataset.removeTeacher),1);renderAll('Teacher deleted')});
+};
+const exportTablesBeforeTeacherCapabilities=exportTables;
+exportTables=()=>{
+  normalizeTeacherAssignments();
+  const tables=exportTablesBeforeTeacherCapabilities();
+  const assignments=tables.find(table=>table[0]==='TeacherAssignments');
+  if(assignments){
+    const definitions=teacherCapabilityDefinitions();
+    const rows=[];
+    data.teachers.forEach(teacher=>(teacher.assignments||[]).forEach(label=>{
+      const definition=definitions.find(item=>item.label===label);
+      if(definition)rows.push([teacher.id,definition.courseId,definition.option]);
+    }));
+    assignments[1]=[['TeacherID','CourseID','CourseOption'],...rows];
+  }
+  return tables;
+};
+const autoPopulateCourseBeforeCapabilityOnly=autoPopulateCourse;
+autoPopulateCourse=course=>{
+  normalizeTypeRules();normalizeTeacherAssignments();
+  const result=autoPopulateCourseBeforeCapabilityOnly(course);
+  normalizeTeacherAssignments();
+  return result;
+};
+const renderCoursesBeforeHideInternalTypes=renderCourses;
+renderCourses=()=>{
+  renderCoursesBeforeHideInternalTypes();
+  const courseHeader=courseBody.closest('table').querySelector('thead tr');
+  courseHeader.querySelectorAll('[data-type-heading]').forEach(cell=>cell.textContent='Schedule group');
+  [...courseHeader.children].filter(cell=>cell.textContent.trim()==='Schedule Type').forEach(cell=>cell.textContent='Schedule group');
+  data.courses.forEach((course,index)=>{
+    const source=courseBody.querySelector(`[data-course="${index}"][data-key="id"]`);
+    const row=source?.closest('tr');if(!row)return;
+    const cells=[...row.children],cell=cells[cells.length-1];
+    if(cell?.querySelector('.choice-note'))cell.innerHTML=course.typeCount?'<span class="choice-note">Handled automatically<br>(no teacher selection)</span>':'<span class="choice-note">Not used</span>';
+  });
+};
+renderAll('Teacher assignments now use course + level / option only; A/B and internal groups no longer appear in teacher input or Excel.');
+</script><script>
+/* Random selection follows exactly the same subject -> level rule as the
+   student editor.  A SelectionGroup is one subject; its items are levels.
+   Therefore PHY S and PHY H compete for the same one selection slot. */
+function selectionGroupsForRandom(course){
+  const explicit=optionGroupsFor(course)||[];
+  return explicit.map(group=>({
+    name:String(group.name||'').trim(),
+    options:(group.items||[]).map(item=>String(item.label||'').trim()).filter(Boolean)
+  })).filter(group=>group.options.length);
+}
+
+autoPopulateCourse=course=>{
+  normalizeTypeRules();
+  normalizeTeacherAssignments();
+  const options=(usable(course)||[]).map(option=>String(option||'').trim()).filter(Boolean);
+  const students=data.students||[],teachers=data.teachers||[];
+  if(course.type!=="required"&&course.type!=="cas"&&(!options.length||options.some(option=>!option))){
+    return {ok:false,message:'Fill in all level / option names for this course before random assignment.'};
+  }
+  if(!teachers.length)return {ok:false,message:'Add at least one teacher before random assignment.'};
+
+  let studentChoices=0;
+  if(course.type==='level'||course.type==='choice'){
+    const groups=selectionGroupsForRandom(course);
+    const needed=Math.max(1,Number(course.pick)||1);
+    if(groups.length<needed){
+      return {ok:false,message:`${course.name||course.id} requires ${needed} different subjects or selection groups, but only ${groups.length} exist. Add more subjects or reduce Student picks.`};
+    }
+    const groupCounts=new Map(groups.map(group=>[group.name,0]));
+    const optionCounts=new Map(options.map(option=>[option,0]));
+    students.forEach(student=>{
+      const remaining=[...groups],picked=[];
+      for(let slot=0;slot<needed;slot++){
+        const fewestGroup=Math.min(...remaining.map(group=>groupCounts.get(group.name)||0));
+        const group=randomItem(remaining.filter(item=>(groupCounts.get(item.name)||0)===fewestGroup));
+        const fewestOption=Math.min(...group.options.map(option=>optionCounts.get(option)||0));
+        const option=randomItem(group.options.filter(item=>(optionCounts.get(item)||0)===fewestOption));
+        picked.push(option);
+        groupCounts.set(group.name,(groupCounts.get(group.name)||0)+1);
+        optionCounts.set(option,(optionCounts.get(option)||0)+1);
+        remaining.splice(remaining.indexOf(group),1);
+      }
+      student.choices??={};
+      student.choices[course.id]=picked;
+      studentChoices+=picked.length;
+    });
+  }
+
+  const capabilities=teacherCapabilityDefinitions().filter(item=>item.courseId===course.id);
+  const courseLabels=new Set(capabilities.map(item=>item.label));
+  teachers.forEach(teacher=>teacher.assignments=(teacher.assignments||[]).filter(label=>!courseLabels.has(label)));
+  let teacherAssignments=0;
+  capabilities.forEach(capability=>{
+    const teacher=chooseLeastLoaded(teachers);
+    if(!teacher)return;
+    teacher.assignments.push(capability.label);
+    teacherAssignments++;
+  });
+  course.autoPopulate=true;
+  normalizeTeacherAssignments();
+  const uniqueTeachers=new Set(teachers.filter(teacher=>(teacher.assignments||[]).some(label=>courseLabels.has(label))).map(teacher=>teacher.id)).size;
+  return {ok:true,message:`Random assignment complete (students + teachers): ${studentChoices} StudentOption, ${teacherAssignments} Teacherteachable Option; Different levels of the same subject are not assigned to the same student. This course uses ${uniqueTeachers} teachers.`};
+};
+</script><script>
+/* The five-teacher sample must demonstrate a viable staffing pattern, not
+   manufacture a false add teachers diagnosis.  Its four unified elective
+   options therefore have four distinct teachers, and PE is moved off the
+   previously overloaded teacher. */
+const loadExampleBeforeResourceBalance=loadFiveTeacherFortyStudentExample;
+loadFiveTeacherFortyStudentExample=()=>{
+  loadExampleBeforeResourceBalance();
+  const elective=data.courses.find(course=>course.id==='ELEC');
+  const pe=data.courses.find(course=>course.id==='PE');
+  const labels=teacherCapabilityDefinitions();
+  const forCourse=(courseId, option)=>labels.find(item=>item.courseId===courseId&&item.option===option)?.label;
+  const electiveLabels=(elective?.options||[]).map(option=>forCourse('ELEC',option)).filter(Boolean);
+  const peLabels=(pe?.options||[]).map(option=>forCourse('PE',option)).filter(Boolean);
+  data.teachers.forEach(teacher=>teacher.assignments=(teacher.assignments||[]).filter(label=>!electiveLabels.includes(label)&&!peLabels.includes(label)));
+  electiveLabels.forEach((label,index)=>data.teachers[index%4]?.assignments.push(label));
+  peLabels.forEach(label=>data.teachers[4]?.assignments.push(label));
+  normalizeTeacherAssignments();
+renderAll('Loaded resource-balanced example: electives run in parallel with four teachers; PE moved off the overloaded teacher.');
+};
+$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;
+</script><script>
+/* A course option has two independent meanings:
+   - Selection group / subject: CHEM, PHY, English, Econ ...
+   - Level within that subject: S, H, S+ ...
+   Students pick subjects, then one level in each selected subject.  The
+   solver uses the same group to put its levels in one simultaneous band. */
+function normalizeCourseHierarchy(){
+  (data.courses||[]).forEach(course=>{
+    if(course.type==='required'||course.type==='cas')return;
+    const options=(usable(course)||[]).map(value=>String(value||'').trim()).filter(Boolean);
+    const previous=new Map();
+    (course.optionGroups||[]).forEach(group=>(group.items||[]).forEach(item=>{
+      previous.set(String(item.label||'').trim(),{group:String(group.name||'').trim(),level:String(item.level||'').trim()});
+    }));
+    const entries=options.map(option=>{
+      const saved=previous.get(option)||{};
+      // A normal level course (English S/H, Math S/H) is one subject.  A
+      // choice course defaults to one subject per option unless the user
+      // explicitly merges options such as CHEM S/CHEM H.
+      const group=saved.group || (course.type==='level' ? (course.id||course.name||'Course') : option);
+      const level=saved.level || (course.type==='level' ? option : '');
+      return {label:option,group,level};
+    });
+    const grouped=new Map();
+    entries.forEach(entry=>{
+      if(!grouped.has(entry.group))grouped.set(entry.group,[]);
+      grouped.get(entry.group).push({label:entry.label,level:entry.level});
+    });
+    course.optionGroups=[...grouped.entries()].map(([name,items])=>({name,items}));
+  });
+}
+function hierarchyEntries(course){
+  normalizeCourseHierarchy();
+  const map=new Map();
+  (course.optionGroups||[]).forEach(group=>(group.items||[]).forEach(item=>map.set(item.label,{group:group.name,level:item.level||''})));
+  return (usable(course)||[]).map(option=>({label:option,...(map.get(option)||{group:option,level:''})}));
+}
+function setHierarchyEntry(course,label,field,value){
+  const entries=hierarchyEntries(course).map(item=>item.label===label?{...item,[field]:String(value||'').trim()}:item);
+  const grouped=new Map();
+  entries.forEach(item=>{
+    const group=item.group||item.label;
+    if(!grouped.has(group))grouped.set(group,[]);
+    grouped.get(group).push({label:item.label,level:item.level||''});
+  });
+  course.optionGroups=[...grouped.entries()].map(([name,items])=>({name,items}));
+}
+const renderCoursesBeforeSubjectLevels=renderCourses;
+renderCourses=()=>{
+  normalizeCourseHierarchy();
+  renderCoursesBeforeSubjectLevels();
+  (data.courses||[]).forEach((course,index)=>{
+    if(course.type==='required'||course.type==='cas'||!(usable(course)||[]).length)return;
+    const source=courseBody.querySelector(`[data-course="${index}"][data-key="id"]`);
+    const baseRow=source?.closest('tr');
+    if(!baseRow)return;
+    const rows=hierarchyEntries(course).map(item=>`<tr><td>${esc(item.label)}</td><td><input data-subject-group="${index}" data-option-label="${esc(item.label)}" value="${esc(item.group)}" placeholder="e.g. CHEM"></td><td><input data-subject-level="${index}" data-option-label="${esc(item.label)}" value="${esc(item.level)}" placeholder="e.g. S / H; leave blank if not a level"></td></tr>`).join('');
+    const config=document.createElement('tr');
+    config.className='hierarchy-settings';
+    config.innerHTML=`<td colspan="99"><details><summary>Subject / level mapping</summary><p class="choice-note">Different levels of the same subject/selection group meet together. For example, CHEM S and CHEM H both use CHEM; Econ, CS, Geo, and VA use their own names and leave level blank.</p><table class="mini-hierarchy"><thead><tr><th>Option</th><th>subject / selection group</th><th>level</th></tr></thead><tbody>${rows}</tbody></table></details></td>`;
+    baseRow.after(config);
+  });
+  courseBody.querySelectorAll('[data-subject-group]').forEach(input=>input.onchange=event=>{
+    const course=data.courses[Number(event.target.dataset.subjectGroup)];
+    setHierarchyEntry(course,event.target.dataset.optionLabel,'group',event.target.value);
+    renderAll('Subject / selection group updated; levels in the group meet at the same time.');
+  });
+  courseBody.querySelectorAll('[data-subject-level]').forEach(input=>input.onchange=event=>{
+    const course=data.courses[Number(event.target.dataset.subjectLevel)];
+    setHierarchyEntry(course,event.target.dataset.optionLabel,'level',event.target.value);
+    renderAll('Level updated; levels of the same subject meet together.');
+  });
+};
+const exportTablesBeforeSubjectLevels=exportTables;
+exportTables=()=>{normalizeCourseHierarchy();return exportTablesBeforeSubjectLevels();};
+const exampleBeforeCombinedTypes=loadFiveTeacherFortyStudentExample;
+loadFiveTeacherFortyStudentExample=()=>{
+  exampleBeforeCombinedTypes();
+  const pe=(data.courses||[]).find(course=>course.id==='PE');
+  if(pe){pe.allGradeSameTime=true;pe.splitAB=false;}
+  normalizeTypeRules();renderAll('Example updated: PE uses all-grade time; Type is determined by Science, Mod2, and other eligible courses.');
+};
+$('exampleBtn').onclick=loadFiveTeacherFortyStudentExample;
+let hierarchyControlsStyle=document.createElement('style');
+hierarchyControlsStyle.textContent='.hierarchy-settings details{margin:5px 0}.hierarchy-settings summary{cursor:pointer;font-weight:600}.mini-hierarchy{margin-top:8px;max-width:720px}.mini-hierarchy input{min-width:110px;width:100%}.mini-hierarchy th,.mini-hierarchy td{padding:5px 7px;text-align:left}';
+document.head.appendChild(hierarchyControlsStyle);
+renderAll('Enabled subject-to-level rule: levels of the same subject meet together; CAS stays in each homeroom.');
+</script><script>
+/* The random sample is intentionally a 15-teacher staffing baseline.  Every
+   teachable option is covered, every teacher receives work, and options that
+   must run in parallel are assigned to distinct teachers. */
+const randomExampleBeforeFifteenTeacherBalance=$('randomExampleBtn').onclick;
+function generateBalancedFifteenTeacherExample(){
+  randomExampleBeforeFifteenTeacherBalance();
+  const shuffled=items=>[...items].sort(()=>Math.random()-.5);
+  data.teachers=shuffled(Array.from({length:15},(_,index)=>({
+    id:`TCH-${String(index+1).padStart(2,'0')}`,
+    name:`Teacher ${String(index+1).padStart(2,'0')}`,
+    assignments:[],casHomeroom:'',unavailable:[]
+  })));
+  normalizeCourseHierarchy();normalizeTeacherAssignments();
+  const definitions=teacherCapabilityDefinitions();
+  const courseById=new Map((data.courses||[]).map(course=>[course.id,course]));
+  const bundleMap=new Map();
+  definitions.forEach(definition=>{
+    const course=courseById.get(definition.courseId)||{};
+    const group=hierarchyEntries(course).find(item=>item.label===definition.option)?.group || definition.option || definition.courseId;
+    const key=`${definition.courseId}|${group}`;
+    if(!bundleMap.has(key))bundleMap.set(key,{key,courseId:definition.courseId,group,labels:[],sameTime:Boolean(course.allGradeSameTime)});
+    bundleMap.get(key).labels.push(definition.label);
+  });
+  const bundles=[...bundleMap.values()];
+  const teacherBundles=teacher=>new Set((teacher.assignments||[]).flatMap(label=>bundles.filter(bundle=>bundle.labels.includes(label)).map(bundle=>bundle.key)));
+  const load=teacher=>teacherBundles(teacher).size+(teacher.casHomeroom?1:0);
+  const least=(excluded=new Set())=>{
+    const pool=data.teachers.filter(teacher=>!excluded.has(teacher.id));
+    const floor=Math.min(...pool.map(load));
+    return shuffled(pool.filter(teacher=>load(teacher)===floor))[0];
+  };
+  const give=(teacher,bundle)=>{
+    bundle.labels.forEach(label=>{if(!teacher.assignments.includes(label))teacher.assignments.push(label);});
+  };
+  // First cover every subject.  If a course is globally simultaneous (PE or
+  // elective), its distinct subject bundles start on distinct teachers.
+  const usedByCourse=new Map();
+  shuffled(bundles).forEach(bundle=>{
+    const used=usedByCourse.get(bundle.courseId)||new Set();
+    const teacher=least(bundle.sameTime?used:new Set());
+    give(teacher,bundle);used.add(teacher.id);usedByCourse.set(bundle.courseId,used);
+  });
+  // A real teacher profile is broad: everybody is qualified for at least
+  // three different subject bundles.  Giving the entire bundle together is
+  // crucial: PHY always means PHY S + PHY H, likewise CHEM/BIO and ENG/MATH.
+  data.teachers.forEach(teacher=>{
+    while(teacherBundles(teacher).size<3){
+      const choices=bundles.filter(bundle=>!teacherBundles(teacher).has(bundle.key));
+      const coverage=new Map(bundles.map(bundle=>[bundle.key,data.teachers.filter(item=>teacherBundles(item).has(bundle.key)).length]));
+      const minimum=Math.min(...choices.map(bundle=>coverage.get(bundle.key)));
+      give(teacher,shuffled(choices.filter(bundle=>coverage.get(bundle.key)===minimum))[0]);
+    }
+  });
+  // CAS needs four different homeroom teachers.  Pick the currently lightest
+  // teachers so CAS does not concentrate an already heavy teaching load.
+  (data.homerooms||[]).forEach(homeroom=>{least().casHomeroom=homeroom.id;});
+  normalizeTeacherAssignments();
+  $('randomExampleBtn').textContent='Generate balanced random 15-teacher / 40-student example';
+  renderAll('Generated balanced random example: 15 teachers, 40 students; every teacher covers at least three courses/subjects, all levels of a subject, and all-grade options use different teachers in parallel.');
+}
+$('randomExampleBtn').onclick=generateBalancedFifteenTeacherExample;
+$('randomExampleBtn').textContent='Generate balanced random 15-teacher / 40-student example';
+/* The ordinary example button used to resurrect an older 5-teacher fixture.
+   That fixture is still useful as historic data, but it is not a safe default
+   for someone who wants to run the solver immediately.  Both sample entry
+   points now create the same current, staff-balanced 15-teacher example. */
+$('exampleBtn').onclick=generateBalancedFifteenTeacherExample;
+$('exampleBtn').textContent='Load schedulable example (15 teachers / 40 students)';
+</script>
+
+
+<script>
+/* Local pipeline: validate input, calculate room distances, prepare the model, schedule, and build the timetable. */
+(() => {
+  const local = location.protocol === "http:" || location.protocol === "https:";
+  const fileInput = document.getElementById("pipelineFile");
+  const fileName = document.getElementById("pipelineFileName");
+  const useEditor = document.getElementById("useEditorInput");
+  const step1 = document.getElementById("runStep1");
+  const step2 = document.getElementById("runStep2");
+  const step3 = document.getElementById("runStep3");
+  const result = document.getElementById("pipelineResult");
+  const downloads = document.getElementById("pipelineDownloads");
+  const view = document.getElementById("viewSchedule");
+  const viewNote = document.getElementById("viewScheduleNote");
+  const mode = document.getElementById("pipelineMode");
+  let inputFile = null;
+  let inputKey = "";
+  let preparedKey = "";
+  let busy = false;
+
+  if (!local) {
+    mode.textContent = "Local website required";
+    result.textContent = "This is a static file page. Start the local website with start.command, then open http://127.0.0.1:8765.";
+    step1.disabled = true;
+  } else {
+    mode.textContent = "Local website connected";
+    result.textContent = "Enter data below, or load an Excel file, then run step 1.";
+  }
+
+  function setBusy(value) {
+    busy = value;
+    step1.disabled = value || !local;
+    step2.disabled = value || !inputKey;
+    step3.disabled = value || !preparedKey;
+  }
+
+  function show(message) {
+    result.textContent = message;
+  }
+
+  function setViewReady(ready, href) {
+    view.classList.toggle("is-ready", ready);
+    view.classList.toggle("is-disabled", !ready);
+    view.setAttribute("aria-disabled", ready ? "false" : "true");
+    view.tabIndex = ready ? 0 : -1;
+    if (ready) {
+      view.href = href || "/preview.html";
+    } else {
+      view.removeAttribute("href");
+    }
+    if (viewNote) viewNote.hidden = ready;
+  }
+
+  view.addEventListener("click", event => {
+    if (!view.classList.contains("is-ready")) {
+      event.preventDefault();
+      show("Run step 3 first. The timetable is available only after a successful solve.");
+    }
+  });
+
+  // Any input change invalidates the last generated timetable.
+  ["exampleBtn", "clearBtn"].forEach(id => {
+    const button = document.getElementById(id);
+    if (button) button.addEventListener("click", () => setViewReady(false));
+  });
+  document.addEventListener("input", () => setViewReady(false), true);
+  document.addEventListener("change", () => setViewReady(false), true);
+
+  function clearDownloads() {
+    downloads.innerHTML = "";
+  }
+
+  function addDownload(item) {
+    if (!item || !item.url) return;
+    const link = document.createElement("a");
+    link.href = item.url;
+    link.textContent = item.name || "Download";
+    link.className = "secondary";
+    link.style.cssText = "display:inline-block;padding:8px 11px;border-radius:7px;background:#e4edf7;color:#12395f;text-decoration:none;font-weight:bold";
+    downloads.appendChild(link);
+  }
+
+  async function readJson(response) {
+    try {
+      return await response.json();
+    } catch (_) {
+      return { ok: false, log: "The local website returned an invalid response." };
+    }
+  }
+
+  async function syncEditor() {
+    const response = await fetch("/api/sync-input", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sheets: exportTables() })
+    });
+    const payload = await readJson(response);
+    if (!response.ok || !payload.ok) throw new Error(payload.log || "Unable to save the form data.");
+    return payload.sourceKey;
+  }
+
+  async function runStep(step, key) {
+    const headers = {};
+    let body;
+    if (step === 1 && inputFile) {
+      headers["X-Filename"] = encodeURIComponent(inputFile.name);
+      body = await inputFile.arrayBuffer();
+    } else {
+      headers["X-Source-Key"] = key;
+    }
+    const response = await fetch("/api/run/" + step, { method: "POST", headers: headers, body: body });
+    const payload = await readJson(response);
+    if (!response.ok || !payload.ok) throw new Error(payload.log || ("Step " + step + " failed."));
+    return payload;
+  }
+
+  step1.onclick = async () => {
+    if (busy) return;
+    setBusy(true);
+    clearDownloads();
+    setViewReady(false);
+    show("Validating input...");
+    try {
+      let key = "";
+      if (!inputFile) {
+        show("Saving the input form...");
+        key = await syncEditor();
+      }
+      const payload = await runStep(1, key);
+      inputKey = payload.sourceKey || key;
+      show(payload.log || "Input validation passed.");
+      (payload.downloads || []).forEach(addDownload);
+    } catch (error) {
+      show(error.message || "Step 1 failed.");
+    } finally {
+      setBusy(false);
+      step2.disabled = !inputKey;
+    }
+  };
+
+  step2.onclick = async () => {
+    if (busy || !inputKey) return;
+    setBusy(true);
+    clearDownloads();
+    setViewReady(false);
+    show("Calculating every room pair and preparing the model...");
+    try {
+      const payload = await runStep(2, inputKey);
+      preparedKey = payload.nextSourceKey || "";
+      if (!preparedKey) throw new Error("The prepared model file was not returned.");
+      show(payload.log || "Room distances and model data prepared.");
+      (payload.downloads || []).forEach(addDownload);
+    } catch (error) {
+      show(error.message || "Step 2 failed.");
+    } finally {
+      setBusy(false);
+      step2.disabled = !inputKey;
+      step3.disabled = !preparedKey;
+    }
+  };
+
+  step3.onclick = async () => {
+    if (busy || !preparedKey) return;
+    setBusy(true);
+    clearDownloads();
+    setViewReady(false);
+    show("Running OR-Tools and building the timetable...");
+    try {
+      const payload = await runStep(3, preparedKey);
+      show(payload.log || "Timetable scheduled successfully.");
+      (payload.downloads || []).forEach(addDownload);
+      if (payload.scheduleUrl) {
+        setViewReady(true, payload.scheduleUrl);
+      }
+    } catch (error) {
+      show(error.message || "Step 3 failed.");
+    } finally {
+      setBusy(false);
+      step3.disabled = !preparedKey;
+    }
+  };
+
+  fileInput.onchange = () => {
+    inputFile = fileInput.files[0] || null;
+    inputKey = "";
+    preparedKey = "";
+    setViewReady(false);
+    clearDownloads();
+    fileName.textContent = inputFile ? inputFile.name : "Using the form below";
+    if (inputFile) show("Loaded " + inputFile.name + ". Run step 1 to validate it.");
+    step2.disabled = true;
+    step3.disabled = true;
+  };
+
+  useEditor.onclick = () => {
+    inputFile = null;
+    fileInput.value = "";
+    inputKey = "";
+    preparedKey = "";
+    setViewReady(false);
+    clearDownloads();
+    fileName.textContent = "Using the form below";
+    show("Using the form below. Run step 1 to validate it.");
+    step2.disabled = true;
+    step3.disabled = true;
+  };
+})();
+</script>
+
+</body></html>

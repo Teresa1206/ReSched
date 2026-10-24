@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Generated run artifacts
+src/runs/
+src/preview_schedule.html
+
+# macOS
+.DS_Store
