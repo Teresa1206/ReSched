@@ -1,16 +1,6 @@
 # ReSched — SHSID 排课系统
 
-本项目用于生成、检查和临时调整学校课表。当前在 macOS 上可用的是 `src/` 目录；`ReScheduler/` 是较早的中文 Windows 分发版。
-
-## 目录说明
-
-| 路径 | 说明 |
-|---|---|
-| `src/` | 当前使用的版本：英文 UI、自包含 Web 服务、包含 `program1.py` 通行矩阵和 `build_schedule.py` |
-| `ReScheduler/` | 较早的中文 Windows 版本：含第四步临时调课，但 Web 服务依赖缺失的 `temporary_web.py`，`.cmd` 里硬编码了 Windows 路径 |
-| `current-html/SHSID.html` | 当前学校系统导出的**一位学生**课表快照，不能直接导入排课流程 |
-| `Track 1 Problem Statement.pdf` | 题目说明 |
-| `start.command` | macOS 启动脚本（自动检查 Python 版本和依赖） |
+本项目用于生成、检查和临时调整学校课表。当前版本是一个自包含的本地 Web 服务：在输入页录入或导入数据，依次运行三步流水线，生成课表预览和可下载结果。
 
 ## 环境要求
 
@@ -20,39 +10,24 @@
 如果使用项目自带的 `.venv`，依赖已经装好。重新安装：
 
 ```bash
-cd /Users/teresayou/Documents/myws/test-project
 .venv/bin/python -m pip install pandas openpyxl ortools
 ```
 
-`ReScheduler/requirements.txt` 也列出了同样的依赖。
-
 ## 启动服务
 
-### 方式 A：直接命令（当前使用）
-
-```bash
-cd /Users/teresayou/Documents/myws/test-project
-python src/server.py
-```
-
-如果系统里没有 `python` 命令，用：
+在项目根目录（本 README 所在目录）执行：
 
 ```bash
 .venv/bin/python src/server.py
-# 或
+```
+
+如果没有 `.venv`，也可以用系统 Python：
+
+```bash
 python3 src/server.py
 ```
 
-### 方式 B：macOS 启动脚本
-
-```bash
-cd /Users/teresayou/Documents/myws/test-project
-./start.command
-```
-
-也可以直接在 Finder 里双击 `start.command`。
-
-启动后服务监听：
+服务启动后监听：
 
 ```
 http://127.0.0.1:8765/
@@ -60,7 +35,9 @@ http://127.0.0.1:8765/
 
 浏览器通常会自动打开；如果没有，手动访问上面的地址。
 
-### 停止服务
+> 页面依赖本地服务提供的接口，请通过 `http://127.0.0.1:8765/` 访问，不要直接双击打开 `src/input.html`。
+
+## 停止服务
 
 ```bash
 # 在运行服务的终端里按 Ctrl+C
@@ -90,21 +67,20 @@ lsof -nP -iTCP:8765 -sTCP:LISTEN
    - 如果你之前选过 Excel 文件，点 **Use the form below** 切回表单数据。
 
 3. **运行第一步：校验输入**
-   - 点击 **Run step 1**。
+   - 点击 **Run step 1**（`step1_validate_input.py`）。
    - 校验通过后，**Run step 2** 才会解锁。
 
-4. **运行第二步：准备模型 + 计算教室距离**
+4. **运行第二步：计算教室距离并准备模型**
    - 点击 **Run step 2**。
-   - 这一步会运行 `program1.py`（生成 `TravelInconvenience`），再运行 `step2_prepare_model.py`。
+   - 这一步先运行 `program1.py`（生成 `TravelInconvenience` / `TravelMatrix`），再运行 `step2_prepare_model.py`。
    - 成功后 **Run step 3** 解锁。
 
 5. **运行第三步：OR-Tools 排课**
    - 点击 **Run step 3**。
-   - 求解器会分配时间、教室、教师和 A/B 学生，然后由 `build_schedule.py` 生成课表页面。
+   - `step3_schedule.py` 分配时间、教室、教师和 A/B 学生，随后 `build_schedule.py` 用 `schedule.html` 模板生成预览页。
 
 6. **查看结果**
-   - **View generated timetable** 在 Step 3 成功前是灰色不可点击的；Step 3 成功后会变成蓝色可用状态。
-   - 点击它打开 `/preview.html`。
+   - **View generated timetable** 在 Step 3 成功前是灰色不可点击的；成功后可点击，打开 `/preview.html`。
    - 在第三步结果区域下载：
      - `*_schedule.xlsx`
      - `*_schedule.json`
@@ -129,23 +105,50 @@ lsof -nP -iTCP:8765 -sTCP:LISTEN
 
 | 文件 | 说明 |
 |---|---|
-| `*_input.xlsx` | 页面表单同步生成的输入工作簿 |
-| `*_travel.xlsx` | `program1.py` 生成的教室通行矩阵 |
-| `*_travel_prepared.xlsx` | `step2_prepare_model.py` 生成的求解器输入 |
-| `*_schedule.xlsx` | 排课结果表 |
-| `*_schedule.json` | 排课结果 JSON |
-| `step1.log` / `step2.log` / `step3.log` | 各步日志 |
+| `<ID>_input.xlsx` | 页面表单同步生成的输入工作簿 |
+| `<ID>_input_travel.xlsx` | `program1.py` 生成的教室通行矩阵 |
+| `<ID>_input_travel_prepared.xlsx` / `.json` | `step2_prepare_model.py` 生成的求解器输入 |
+| `<ID>_input_travel_prepared_schedule.xlsx` | 排课结果表 |
+| `<ID>_input_travel_prepared_schedule.json` | 排课结果 JSON |
+| `step1.log` / `step2.log` / `step3.log` / `build.log` | 各步日志 |
 
-`src/preview_schedule.html` 是最近一次生成的课表预览页面。
+`src/preview_schedule.html` 是最近一次生成的课表预览页面（每次 Step 3 覆盖）。
+
+## 命令行单独运行
+
+各步骤也可以脱离 Web 服务单独执行（在项目根目录运行）：
+
+```bash
+# 第一步：校验输入
+.venv/bin/python src/step1_validate_input.py timetable-input.xlsx
+
+# 第二步：通行矩阵 + 求解器输入
+.venv/bin/python src/program1.py timetable-input.xlsx timetable-input_travel.xlsx
+.venv/bin/python src/step2_prepare_model.py timetable-input_travel.xlsx
+
+# 第三步：排课
+.venv/bin/python src/step3_schedule.py timetable-input_travel_prepared.xlsx
+
+# 独立复算排课结果
+.venv/bin/python src/step3_evaluate_result.py \
+    timetable-input_travel_prepared.xlsx \
+    timetable-input_travel_prepared_schedule.json
+
+# 生成课表预览页
+.venv/bin/python src/build_schedule.py \
+    timetable-input_travel_prepared_schedule.json \
+    timetable-input_travel_prepared.xlsx \
+    timetable-input_travel.xlsx \
+    schedule.html src/preview_schedule.html
+```
 
 ## 常见问题
 
 ### `ModuleNotFoundError: No module named 'pandas'`
 
-依赖没装到当前 Python：用项目 venv：
+依赖没装到当前 Python，改用项目 venv：
 
 ```bash
-cd /Users/teresayou/Documents/myws/test-project
 .venv/bin/python -m pip install pandas openpyxl ortools
 .venv/bin/python src/server.py
 ```
@@ -161,17 +164,9 @@ pkill -f "src/server.py"
 
 然后重新启动。
 
-### `ModuleNotFoundError: No module named 'temporary_web'`
-
-你运行的是 `ReScheduler/resched_web_server.py`。该模块缺失，且不是 pip 包。改用：
-
-```bash
-python src/server.py
-```
-
 ### `python: command not found`
 
-macOS 上可能只有 `python3`：
+macOS 上可能没有 `python` 命令，改用 `python3` 或直接使用虚拟环境：
 
 ```bash
 python3 src/server.py
@@ -179,9 +174,13 @@ python3 src/server.py
 .venv/bin/python src/server.py
 ```
 
+### 打开 `/preview.html` 显示 404
+
+预览页只在第三步成功后生成；先完成 Step 3，再点击 **View generated timetable**。
+
 ### 第三步失败
 
-查看日志：
+查看对应运行的日志：
 
 ```bash
 src/runs/<运行ID>/step3.log
@@ -193,11 +192,10 @@ src/runs/<运行ID>/step3.log
 
 - 页面里的 **15 teachers / 40 students** 是合成示例，仅用于验证流程，不是真实 SHSID 数据。
 - 真实排课需要按 `step1` 的 schema 准备完整数据：`Buildings`、`Classrooms`、`BuildingDistances`、`TimeSlots`、`NoClassTimes`、`Homerooms`、`HomeroomBlockBalance`、`Courses`、`CourseOptions`、`Teachers`、`TeacherAssignments`、`TeacherAvailability`、`TeacherCAS`、`Students`、`StudentSelections`。
-- `current-html/SHSID.html` 只包含一位学生的课表，不能直接导入；需要从学校系统导出完整数据后重新录入/转换。
+- `src/input_original.html` 是中文原版输入页的备份，当前流程使用 `src/input.html`。
 
 ## 相关文件
 
 - `Track 1 Problem Statement.pdf` — 题目与评审要求
-- `ReScheduler/requirements.txt` — 依赖清单
 - `src/input.html` — 实际使用的输入页面（英文）
-- `src/input_original.html` — 中文原版输入页面备份（不使用）
+- `schedule.html` — 课表页面模板（预览页由它生成）
